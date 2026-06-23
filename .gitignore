@@ -37,6 +37,7 @@ decode_*.js
 deobfuscate.js
 download_*.js
 extract_*.js
+extract_*.html
 find_*.js
 proxy.html
 remove_debugger*.js
