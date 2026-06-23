@@ -15,7 +15,8 @@
 需要安装 Node.js，并使用支持 WebHID 的 Chrome 或 Edge 浏览器。
 
 ```powershell
-cd D:\mowang
+git clone https://github.com/IM2Pai/mowang-s.git
+cd mowang-s
 node server.js
 ```
 
