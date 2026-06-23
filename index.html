@@ -772,6 +772,9 @@ var _hmt = _hmt || [];
   
   var REPORT_ID = 0x20;
   var DEVICE_FILTERS = [{ usagePage: 0xFF00, usage: 0x01 }];
+  var LAST_CONFIG_KEY = 'mowang_last_config_v1';
+  var hardwareConfigLoaded = false;
+  var hardwareReadFallbackTimer = null;
   
   var WEAPON_SLOTS = {
     '0x07': '第一把',
@@ -817,6 +820,25 @@ var _hmt = _hmt || [];
   
   function byteToSigned(val) {
     return val > 127 ? val - 256 : val;
+  }
+  
+  function toHexByte(value) {
+    return '0x' + value.toString(16).padStart(2, '0').toUpperCase();
+  }
+  
+  function setSelectValue(id, value) {
+    var select = document.getElementById(id);
+    if (!select || value === null || value === undefined || value === '') return false;
+    
+    var target = String(value);
+    for (var i = 0; i < select.options.length; i++) {
+      if (select.options[i].value.toUpperCase() === target.toUpperCase()) {
+        select.value = select.options[i].value;
+        return true;
+      }
+    }
+    
+    return false;
   }
   
   function packConfig() {
@@ -876,7 +898,7 @@ var _hmt = _hmt || [];
   function unpackConfig(data) {
     if (!data || data.length < 0x24) return;
     
-    document.getElementById('weaponTriggerKey').value = '0x' + data[0x00].toString(16).padStart(2, '0').toUpperCase();
+    setSelectValue('weaponTriggerKey', toHexByte(data[0x00]));
     document.getElementById('phase1Time').value = (data[0x02] << 8) | data[0x01];
     document.getElementById('phase1TimeMax').value = (data[0x04] << 8) | data[0x03];
     document.getElementById('phase1DelayMin').value = data[0x05];
@@ -909,6 +931,71 @@ var _hmt = _hmt || [];
     
     var dataId = (data[0x23] << 8) | data[0x22];
     document.getElementById('dataId').value = dataId;
+  }
+  
+  function getConfigPayloadFromReport(data) {
+    if (!data || data.length < 0x24) return null;
+    
+    if (data.length >= 0x26 && data[1] === 0x00) {
+      if ((data[0] >= 0x07 && data[0] <= 0x0C) || data[0] === 0xF2) {
+        return data.slice(0x02, 0x26);
+      }
+    }
+    
+    return data.slice(0x00, 0x24);
+  }
+  
+  function saveLastConfig(source) {
+    try {
+      var snapshot = {
+        version: 1,
+        source: source || 'ui',
+        savedAt: new Date().toISOString(),
+        weaponSelect: document.getElementById('weaponSelect').value,
+        weaponTriggerKey: document.getElementById('weaponTriggerKey').value,
+        moShiSelect: document.getElementById('moShiSelect').value,
+        guanBiSelect: document.getElementById('guanBiSelect').value,
+        dataId: document.getElementById('dataId').value,
+        config: Array.from(packConfig())
+      };
+      
+      localStorage.setItem(LAST_CONFIG_KEY, JSON.stringify(snapshot));
+      return true;
+    } catch (e) {
+      addLog('保存本地上次配置失败: ' + e.message, 'warning');
+      return false;
+    }
+  }
+  
+  function restoreLastConfig(reason) {
+    try {
+      var raw = localStorage.getItem(LAST_CONFIG_KEY);
+      if (!raw) {
+        addLog('未找到上次保存的本地配置', 'warning');
+        return false;
+      }
+      
+      var snapshot = JSON.parse(raw);
+      if (!snapshot || !snapshot.config || snapshot.config.length < 0x24) {
+        addLog('上次保存的本地配置无效', 'warning');
+        return false;
+      }
+      
+      setSelectValue('weaponSelect', snapshot.weaponSelect);
+      setSelectValue('moShiSelect', snapshot.moShiSelect);
+      setSelectValue('guanBiSelect', snapshot.guanBiSelect);
+      unpackConfig(new Uint8Array(snapshot.config));
+      
+      if (snapshot.dataId !== undefined) {
+        document.getElementById('dataId').value = snapshot.dataId;
+      }
+      
+      addLog(reason || '已恢复上次保存的本地配置', 'success');
+      return true;
+    } catch (e) {
+      addLog('恢复上次保存的本地配置失败: ' + e.message, 'error');
+      return false;
+    }
   }
   
   function loadCloudDataToUI(data) {
@@ -994,10 +1081,18 @@ var _hmt = _hmt || [];
     var hexStr = Array.from(data).map(function(b) { return b.toString(16).padStart(2, '0'); }).join(' ');
     addLog('收到数据: ' + hexStr, 'data');
     
-    // 解析压枪配置数据 (36字节)
-    if (data[0] === 0xF2 && data[1] === 0x00 && data.length >= 36) {
+    // 解析压枪配置数据 (36字节，部分固件会带2字节命令头)
+    if ((data[0] === 0xF2 && data[1] === 0x00 && data.length >= 36) || (data[0] >= 0x07 && data[0] <= 0x0C && data[1] === 0x00 && data.length >= 38)) {
       try {
-        unpackConfig(data);
+        var configPayload = getConfigPayloadFromReport(data);
+        if (!configPayload) return;
+        unpackConfig(configPayload);
+        hardwareConfigLoaded = true;
+        if (hardwareReadFallbackTimer) {
+          clearTimeout(hardwareReadFallbackTimer);
+          hardwareReadFallbackTimer = null;
+        }
+        saveLastConfig('hardware');
         addLog('已从设备读取压枪配置', 'success');
       } catch (e) {
         addLog('解析配置数据失败: ' + e.message, 'error');
@@ -1022,7 +1117,7 @@ var _hmt = _hmt || [];
     if (data[0] === 0xF3 && data[1] === 0x00) {
       var triggerValue = data[2];
       var triggerSelect = document.getElementById('weaponTriggerKey');
-      var triggerHex = '0x' + triggerValue.toString(16).padStart(2, '0').toUpperCase();
+      var triggerHex = toHexByte(triggerValue);
       // 查找匹配的选项
       for (var i = 0; i < triggerSelect.options.length; i++) {
         if (triggerSelect.options[i].value === triggerHex) {
@@ -1034,8 +1129,10 @@ var _hmt = _hmt || [];
     }
     
     // 解析数据ID (从配置数据的最后两个字节)
-    if (data[0] === 0xF2 && data[1] === 0x00 && data.length >= 36) {
-      var dataId = (data[35] << 8) | data[34];
+    if ((data[0] === 0xF2 && data[1] === 0x00 && data.length >= 36) || (data[0] >= 0x07 && data[0] <= 0x0C && data[1] === 0x00 && data.length >= 38)) {
+      var idPayload = getConfigPayloadFromReport(data);
+      if (!idPayload) return;
+      var dataId = (idPayload[35] << 8) | idPayload[34];
       if (dataId > 0 && dataId <= 65535) {
         document.getElementById('dataId').value = dataId;
         addLog('已读取数据ID: ' + dataId, 'success');
@@ -1092,7 +1189,17 @@ var _hmt = _hmt || [];
         await loadLocalData();
         
         addLog('正在读取设备配置...', 'info');
+        hardwareConfigLoaded = false;
         await sendData(0x04, 0x00);
+        
+        if (hardwareReadFallbackTimer) {
+          clearTimeout(hardwareReadFallbackTimer);
+        }
+        hardwareReadFallbackTimer = setTimeout(function() {
+          if (!hardwareConfigLoaded) {
+            restoreLastConfig('未读取到硬件配置，已恢复上次保存的本地配置');
+          }
+        }, 1500);
       }
     } catch (e) {
       addLog('连接失败: ' + e.message, 'error');
@@ -1218,6 +1325,7 @@ var _hmt = _hmt || [];
       // 启用当前武器槽，避免保存后仍停留在旧配置
       await device.sendReport(REPORT_ID, new Uint8Array([weaponSlot, 0x01]));
       addLog('当前配置已启用', 'success');
+      saveLastConfig('save');
     } catch (e) {
       addLog('保存配置失败: ' + e.message, 'error');
     }
