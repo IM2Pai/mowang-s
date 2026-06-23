@@ -21,10 +21,24 @@ Thumbs.db
 .codegraph/
 
 # Reverse-engineering and capture artifacts that are not needed to run the app
+AGENTS.md
 array_only.txt
 string_array.txt
 captured_api.json
 run_full*.js
 run_logs.js
 run_patched*.js
+batch_download*.js
+cap.js
+capture_*.js
+chrome_intercept.js
+debug.html
+decode_*.js
+deobfuscate.js
+download_*.js
+extract_*.js
+find_*.js
+proxy.html
+remove_debugger*.js
+run_in_node.js
 hub.mowangs.com/

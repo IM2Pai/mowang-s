@@ -33,7 +33,6 @@ http://localhost:8080
 - `server.js`：本地静态文件服务器
 - `mowang_data.json`：本地配置数据
 - `local.html`：旧版/简化版页面
-- `capture_hid.js`：HID 调试辅助脚本
 
 ## 注意事项
 
@@ -43,4 +42,4 @@ http://localhost:8080
 
 ## License
 
-尚未选择许可证。开源发布前建议添加明确许可证，例如 MIT、Apache-2.0 或 GPL-3.0。
+本项目使用 MIT License，详见 `LICENSE`。
