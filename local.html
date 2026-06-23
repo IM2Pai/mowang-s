@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>魔王S外设 - 本地完整版</title>
+<style>
+:root {
+  --primary-color: #FF3366;
+  --success-color: #00D084;
+  --warning-color: #FFAA00;
+  --danger-color: #FF4757;
+  --info-color: #8B5CFF;
+  --secondary-color: #00C2FF;
+  --bg-blur: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --radius: 16px;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  --gradient-bg: linear-gradient(135deg, #1A1A2E, #16213E, #0F3460);
+  --gradient-accent: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+}
+
+* { box-sizing: border-box; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; margin:0; padding:0; }
+
+body {
+  background: var(--gradient-bg);
+  color: #F0F0FF;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+header.toolbar {
+  position: sticky;
+  top: 0;
+  width:100%;
+  background: rgba(26, 26, 46, 0.95);
+  backdrop-filter: blur(16px);
+  border-bottom: 2px solid rgba(255, 51, 102, 0.4);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:16px 24px;
+  z-index:100;
+}
+
+h1 { 
+  font-size:1.8rem; 
+  font-weight: 800;
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.container {
+  display:grid;
+  grid-template-columns: 350px 1fr;
+  gap:24px;
+  padding:24px;
+  max-width:1600px;
+  width:100%;
+}
+
+@media (max-width:1000px) {
+  .container { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--bg-blur);
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding:24px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(20px);
+}
+
+h2 {
+  color:#FFFFFF;
+  font-size:1.1rem;
+  font-weight: 700;
+  border-bottom:2px solid rgba(255, 255, 255, 0.15);
+  padding-bottom:10px;
+  margin-bottom:16px;
+}
+
+label { display:block; font-size:0.85rem; margin-bottom:6px; color: #E0E0FF; font-weight: 600; }
+
+input, select {
+  width:100%;
+  padding:10px 14px;
+  border-radius:8px;
+  border:2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 30, 50, 0.8);
+  color:#FFFFFF;
+  font-size:0.9rem;
+}
+
+input:focus, select:focus { 
+  outline:none; 
+  border-color:var(--primary-color);
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23FF3366' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+select option { background: #2A2A4A; color: white; }
+
+.config-row { display:flex; gap:12px; align-items:flex-end; margin-bottom:16px; }
+.config-row > div { flex:1; }
+.config-row button { flex:0 0 auto; }
+
+button {
+  border:none;
+  border-radius:10px;
+  padding:10px 18px;
+  font-weight:700;
+  cursor:pointer;
+  background: linear-gradient(135deg, var(--primary-color), #FF6B9D);
+  color:#fff;
+  font-size:0.9rem;
+  transition: all 0.2s;
+}
+
+button:hover { transform:translateY(-2px); box-shadow: 0 8px 20px rgba(255, 51, 102, 0.4); }
+button:disabled { background:#555; cursor:not-allowed; transform:none; box-shadow:none; }
+
+.btn-success { background: linear-gradient(135deg, var(--success-color), #00FFA3); }
+.btn-info { background: linear-gradient(135deg, var(--info-color), #B380FF); }
+.btn-warning { background: linear-gradient(135deg, var(--warning-color), #FFCC33); }
+
+.phase-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width:1200px) {
+  .phase-grid { grid-template-columns: 1fr; }
+}
+
+.phase-card {
+  background: rgba(30, 30, 50, 0.6);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.phase-title {
+  font-weight: 700;
+  color: var(--secondary-color);
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.phase-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.phase-field label {
+  width: 50px;
+  margin: 0;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.phase-field input {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.phase-field span {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.log-area {
+  height: 500px;
+  overflow-y: auto;
+  background: rgba(30, 30, 50, 0.8);
+  border-radius: 10px;
+  padding: 16px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.log-entry { 
+  margin-bottom: 8px; 
+  padding-bottom: 6px; 
+  border-bottom: 1px solid rgba(255,255,255,0.05); 
+}
+
+.log-time { color: var(--secondary-color); margin-right: 8px; }
+.log-success { color: var(--success-color); }
+.log-error { color: var(--danger-color); }
+.log-info { color: #FFFFFF; }
+.log-data { color: var(--warning-color); }
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.data-list {
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(30, 30, 50, 0.6);
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 12px;
+}
+
+.data-item {
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.data-item:hover { background: rgba(255, 51, 102, 0.2); }
+.data-item.active { background: rgba(255, 51, 102, 0.4); }
+</style>
+</head>
+<body>
+
+<header class="toolbar">
+  <h1>魔王S外设 - 本地完整版</h1>
+  <div style="color: #00D084; font-size: 0.9rem;">已加载 <span id="dataCount">0</span> 条数据</div>
+</header>
+
+<div class="container">
+  <!-- 左侧配置 -->
+  <div>
+    <div class="card">
+      <h2>数据选择</h2>
+      <div class="config-row">
+        <div>
+          <label>数据ID</label>
+          <input type="number" id="dataId" min="1" max="65535" placeholder="输入ID或从下方列表选择" />
+        </div>
+        <button id="loadBtn" class="btn-info">加载</button>
+      </div>
+      <div class="data-list" id="dataList"></div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+      <h2>武器配置</h2>
+      <div>
+        <label>选择配置槽位</label>
+        <select id="weaponSlot">
+          <option value="1">第一把</option>
+          <option value="2">第二把</option>
+          <option value="3">第三把</option>
+          <option value="4">第四把</option>
+          <option value="5">第五把</option>
+          <option value="6">第六把</option>
+        </select>
+      </div>
+      <div style="margin-top: 12px;">
+        <label>启动按键</label>
+        <select id="triggerKey">
+          <option value="0xF0">关闭功能</option>
+          <option value="0x08">下侧键单击</option>
+          <option value="0x10">上侧键单击</option>
+          <option value="0x14">滚轮+上侧键</option>
+          <option value="0x0C">滚轮+下侧键</option>
+          <option value="0x21">滚轮按住向上</option>
+          <option value="0x22">滚轮按住向下</option>
+          <option value="0x23">上侧键双击</option>
+          <option value="0x24">下侧键双击</option>
+          <option value="0x25">滚轮双击</option>
+        </select>
+      </div>
+      <div class="btn-group">
+        <button id="saveBtn" class="btn-success">保存到本地</button>
+        <button id="exportBtn" class="btn-warning">导出全部数据</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+      <h2>模式配置</h2>
+      <div>
+        <label>开镜模式</label>
+        <select id="aimMode">
+          <option value="0x01">右键单击开镜</option>
+          <option value="0x02">右键长按开镜</option>
+        </select>
+      </div>
+      <div id="closeKeyDiv" style="margin-top: 12px; display: none;">
+        <label>关闭按键</label>
+        <select id="closeKey">
+          <option value="0x08">下侧键单击</option>
+          <option value="0x10">上侧键单击</option>
+          <option value="0x0A">右键+下侧键</option>
+          <option value="0x25">滚轮双击</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧参数 -->
+  <div>
+    <div class="card">
+      <h2>参数配置 - <span id="currentId">未选择</span></h2>
+      
+      <div class="phase-grid">
+        <!-- 阶段1 -->
+        <div class="phase-card">
+          <div class="phase-title">阶段 1</div>
+          <div class="phase-field">
+            <label>时间</label>
+            <input type="number" id="p1_time" min="0" max="65535" value="0">
+            <span>-</span>
+            <input type="number" id="p1_time_max" min="0" max="65535" value="0">
+          </div>
+          <div class="phase-field">
+            <label>延迟</label>
+            <input type="number" id="p1_delay_min" min="0" max="255" value="0">
+            <span>-</span>
+            <input type="number" id="p1_delay_max" min="0" max="255" value="0">
+          </div>
+          <div class="phase-field">
+            <label>X主</label>
+            <input type="number" id="p1_x_main" min="-128" max="127" value="0">
+            <span>Y主</span>
+            <input type="number" id="p1_y_main" min="-128" max="127" value="0">
+          </div>
+          <div class="phase-field">
+            <label>X备</label>
+            <input type="number" id="p1_x_alt" min="-128" max="127" value="0">
+            <span>Y备</span>
+            <input type="number" id="p1_y_alt" min="-128" max="127" value="0">
+          </div>
+          <div class="phase-field">
+            <label>间隔</label>
+            <input type="number" id="p1_interval" min="0" max="255" value="0">
+          </div>
+        </div>
+
+        <!-- 阶段2 -->
+        <div class="phase-card">
+          <div class="phase-title">阶段 2</div>
+          <div class="phase-field">
+            <label>时间</label>
+            <input type="number" id="p2_time" min="0" max="65535" value="0">
+            <span>-</span>
+            <input type="number" id="p2_time_max" min="0" max="65535" value="0">
+          </div>
+          <div class="phase-field">
+            <label>延迟</label>
+            <input type="number" id="p2_delay_min" min="0" max="255" value="0">
+            <span>-</span>
+            <input type="number" id="p2_delay_max" min="0" max="255" value="0">
+          </div>
+          <div class="phase-field">
+            <label>X主</label>
+            <input type="number" id="p2_x_main" min="-128" max="127" value="0">
+            <span>Y主</span>
+            <input type="number" id="p2_y_main" min="-128" max="127" value="0">
+          </div>
+          <div class="phase-field">
+            <label>X备</label>
+            <input type="number" id="p2_x_alt" min="-128" max="127" value="0">
+            <span>Y备</span>
+            <input type="number" id="p2_y_alt" min="-128" max="127" value="0">
+          </div>
+          <div class="phase-field">
+            <label>间隔</label>
+            <input type="number" id="p2_interval" min="0" max="255" value="0">
+          </div>
+        </div>
+
+        <!-- 阶段3 -->
+        <div class="phase-card">
+          <div class="phase-title">阶段 3</div>
+          <div class="phase-field">
+            <label>时间</label>
+            <input type="number" id="p3_time" min="0" max="65535" value="0">
+            <span>-</span>
+            <input type="number" id="p3_time_max" min="0" max="65535" value="0">
+          </div>
+          <div class="phase-field">
+            <label>延迟</label>
+            <input type="number" id="p3_delay_min" min="0" max="255" value="0">
+            <span>-</span>
+            <input type="number" id="p3_delay_max" min="0" max="255" value="0">
+          </div>
+          <div class="phase-field">
+            <label>X主</label>
+            <input type="number" id="p3_x_main" min="-128" max="127" value="0">
+            <span>Y主</span>
+            <input type="number" id="p3_y_main" min="-128" max="127" value="0">
+          </div>
+          <div class="phase-field">
+            <label>X备</label>
+            <input type="number" id="p3_x_alt" min="-128" max="127" value="0">
+            <span>Y备</span>
+            <input type="number" id="p3_y_alt" min="-128" max="127" value="0">
+          </div>
+          <div class="phase-field">
+            <label>间隔</label>
+            <input type="number" id="p3_interval" min="0" max="255" value="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button id="applyBtn" class="btn-success">应用到设备</button>
+        <button id="resetBtn" class="btn-warning">重置参数</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+      <h2>操作日志</h2>
+      <div id="logArea" class="log-area"></div>
+      <div class="btn-group">
+        <button id="connectDeviceBtn" class="btn-success">连接设备</button>
+        <button id="disconnectBtn" disabled>断开设备</button>
+        <button id="clearLogBtn">清除日志</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 全局变量
+var cloudData = {};
+var currentDataId = null;
+var device = null;
+var isDeviceConnected = false;
+
+// 加载云端数据
+function loadCloudData() {
+  fetch('mowang_data.json')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      cloudData = data;
+      var count = Object.keys(data).length;
+      document.getElementById('dataCount').textContent = count;
+      addLog('已加载 ' + count + ' 条云端数据', 'success');
+      renderDataList();
+    })
+    .catch(function(e) {
+      addLog('加载数据失败: ' + e.message, 'error');
+    });
+}
+
+// 渲染数据列表
+function renderDataList() {
+  var list = document.getElementById('dataList');
+  var ids = Object.keys(cloudData).map(Number).sort(function(a,b){ return a-b; });
+  var html = '';
+  var showIds = ids.slice(0, 50);
+  showIds.forEach(function(id) {
+    html += '<div class="data-item" onclick="selectData(' + id + ')">ID: ' + id + '</div>';
+  });
+  if (ids.length > 50) {
+    html += '<div style="color:#888;font-size:0.8rem;padding:4px;">... 还有 ' + (ids.length - 50) + ' 条</div>';
+  }
+  list.innerHTML = html;
+}
+
+// 选择数据
+function selectData(id) {
+  document.getElementById('dataId').value = id;
+  loadData(id);
+}
+
+// 加载数据到表单
+function loadData(id) {
+  var data = cloudData[id];
+  if (!data) {
+    addLog('ID ' + id + ' 不存在', 'error');
+    return;
+  }
+  
+  currentDataId = id;
+  document.getElementById('currentId').textContent = 'ID: ' + id;
+  
+  // 阶段1
+  document.getElementById('p1_time').value = data.phase1_time || 0;
+  document.getElementById('p1_time_max').value = data.phase1_time_max || 0;
+  document.getElementById('p1_delay_min').value = data.phase1_delay_min || 0;
+  document.getElementById('p1_delay_max').value = data.phase1_delay_max || 0;
+  document.getElementById('p1_x_main').value = data.phase1_x_main || 0;
+  document.getElementById('p1_y_main').value = data.phase1_y_main || 0;
+  document.getElementById('p1_x_alt').value = data.phase1_x_alt || 0;
+  document.getElementById('p1_y_alt').value = data.phase1_y_alt || 0;
+  document.getElementById('p1_interval').value = data.phase1_interval || 0;
+  
+  // 阶段2
+  document.getElementById('p2_time').value = data.phase2_time || 0;
+  document.getElementById('p2_time_max').value = data.phase2_time_max || 0;
+  document.getElementById('p2_delay_min').value = data.phase2_delay_min || 0;
+  document.getElementById('p2_delay_max').value = data.phase2_delay_max || 0;
+  document.getElementById('p2_x_main').value = data.phase2_x_main || 0;
+  document.getElementById('p2_y_main').value = data.phase2_y_main || 0;
+  document.getElementById('p2_x_alt').value = data.phase2_x_alt || 0;
+  document.getElementById('p2_y_alt').value = data.phase2_y_alt || 0;
+  document.getElementById('p2_interval').value = data.phase2_interval || 0;
+  
+  // 阶段3
+  document.getElementById('p3_time').value = data.phase3_time || 0;
+  document.getElementById('p3_time_max').value = data.phase3_time_max || 0;
+  document.getElementById('p3_delay_min').value = data.phase3_delay_min || 0;
+  document.getElementById('p3_delay_max').value = data.phase3_delay_max || 0;
+  document.getElementById('p3_x_main').value = data.phase3_x_main || 0;
+  document.getElementById('p3_y_main').value = data.phase3_y_main || 0;
+  document.getElementById('p3_x_alt').value = data.phase3_x_alt || 0;
+  document.getElementById('p3_y_alt').value = data.phase3_y_alt || 0;
+  document.getElementById('p3_interval').value = data.phase3_interval || 0;
+  
+  // 高亮选中项
+  var items = document.querySelectorAll('.data-item');
+  items.forEach(function(item) { item.classList.remove('active'); });
+  var target = document.querySelector('.data-item[onclick="selectData(' + id + ')"]');
+  if (target) target.classList.add('active');
+  
+  addLog('已加载 ID: ' + id, 'success');
+}
+
+// 获取当前表单数据
+function getFormData() {
+  return {
+    phase1_time: parseInt(document.getElementById('p1_time').value) || 0,
+    phase1_time_max: parseInt(document.getElementById('p1_time_max').value) || 0,
+    phase1_delay_min: parseInt(document.getElementById('p1_delay_min').value) || 0,
+    phase1_delay_max: parseInt(document.getElementById('p1_delay_max').value) || 0,
+    phase1_x_main: parseInt(document.getElementById('p1_x_main').value) || 0,
+    phase1_y_main: parseInt(document.getElementById('p1_y_main').value) || 0,
+    phase1_x_alt: parseInt(document.getElementById('p1_x_alt').value) || 0,
+    phase1_y_alt: parseInt(document.getElementById('p1_y_alt').value) || 0,
+    phase1_interval: parseInt(document.getElementById('p1_interval').value) || 0,
+    phase2_time: parseInt(document.getElementById('p2_time').value) || 0,
+    phase2_time_max: parseInt(document.getElementById('p2_time_max').value) || 0,
+    phase2_delay_min: parseInt(document.getElementById('p2_delay_min').value) || 0,
+    phase2_delay_max: parseInt(document.getElementById('p2_delay_max').value) || 0,
+    phase2_x_main: parseInt(document.getElementById('p2_x_main').value) || 0,
+    phase2_y_main: parseInt(document.getElementById('p2_y_main').value) || 0,
+    phase2_x_alt: parseInt(document.getElementById('p2_x_alt').value) || 0,
+    phase2_y_alt: parseInt(document.getElementById('p2_y_alt').value) || 0,
+    phase2_interval: parseInt(document.getElementById('p2_interval').value) || 0,
+    phase3_time: parseInt(document.getElementById('p3_time').value) || 0,
+    phase3_time_max: parseInt(document.getElementById('p3_time_max').value) || 0,
+    phase3_delay_min: parseInt(document.getElementById('p3_delay_min').value) || 0,
+    phase3_delay_max: parseInt(document.getElementById('p3_delay_max').value) || 0,
+    phase3_x_main: parseInt(document.getElementById('p3_x_main').value) || 0,
+    phase3_y_main: parseInt(document.getElementById('p3_y_main').value) || 0,
+    phase3_x_alt: parseInt(document.getElementById('p3_x_alt').value) || 0,
+    phase3_y_alt: parseInt(document.getElementById('p3_y_alt').value) || 0,
+    phase3_interval: parseInt(document.getElementById('p3_interval').value) || 0
+  };
+}
+
+// 保存到本地
+function saveToLocal() {
+  var id = document.getElementById('dataId').value;
+  if (!id) {
+    addLog('请先输入数据ID', 'error');
+    return;
+  }
+  
+  var data = getFormData();
+  var saved = JSON.parse(localStorage.getItem('mowang_saved') || '{}');
+  saved[id] = data;
+  localStorage.setItem('mowang_saved', JSON.stringify(saved));
+  addLog('已保存 ID: ' + id + ' 到本地', 'success');
+}
+
+// 导出全部数据
+function exportAllData() {
+  var saved = JSON.parse(localStorage.getItem('mowang_saved') || '{}');
+  var all = Object.assign({}, cloudData, saved);
+  var blob = new Blob([JSON.stringify(all, null, 2)], {type: 'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mowang_all_data.json';
+  a.click();
+  addLog('已导出 ' + Object.keys(all).length + ' 条数据', 'success');
+}
+
+// 日志
+function addLog(msg, type) {
+  var log = document.getElementById('logArea');
+  var time = new Date().toLocaleTimeString();
+  var cls = 'log-' + (type || 'info');
+  log.innerHTML += '<div class="log-entry"><span class="log-time">[' + time + ']</span><span class="' + cls + '">' + msg + '</span></div>';
+  log.scrollTop = log.scrollHeight;
+}
+
+// WebHID 连接设备
+document.getElementById('connectDeviceBtn').addEventListener('click', async function() {
+  try {
+    if (!navigator.hid) {
+      addLog('浏览器不支持WebHID，请使用Chrome 89+', 'error');
+      return;
+    }
+    
+    var devices = await navigator.hid.requestDevice({
+      filters: [{ usagePage: 0xFF00, usage: 0x01 }]
+    });
+    
+    if (devices && devices.length > 0) {
+      device = devices[0];
+      await device.open();
+      isDeviceConnected = true;
+      
+      document.getElementById('connectDeviceBtn').disabled = true;
+      document.getElementById('disconnectBtn').disabled = false;
+      
+      addLog('设备已连接: ' + device.productName, 'success');
+      addLog('VID: 0x' + device.vendorId.toString(16).toUpperCase() + ' PID: 0x' + device.productId.toString(16).toUpperCase(), 'data');
+    }
+  } catch (e) {
+    addLog('连接失败: ' + e.message, 'error');
+  }
+});
+
+// 断开设备
+document.getElementById('disconnectBtn').addEventListener('click', async function() {
+  if (device) {
+    await device.close();
+    device = null;
+    isDeviceConnected = false;
+    
+    document.getElementById('connectDeviceBtn').disabled = false;
+    document.getElementById('disconnectBtn').disabled = true;
+    
+    addLog('设备已断开', 'info');
+  }
+});
+
+// 应用到设备
+document.getElementById('applyBtn').addEventListener('click', async function() {
+  if (!isDeviceConnected) {
+    addLog('请先连接设备', 'error');
+    return;
+  }
+  
+  addLog('正在发送配置到设备...', 'info');
+  // TODO: 实现实际的HID通信协议
+  addLog('功能开发中...', 'warning');
+});
+
+// 事件绑定
+document.getElementById('loadBtn').addEventListener('click', function() {
+  var id = document.getElementById('dataId').value;
+  if (id) loadData(parseInt(id));
+});
+
+document.getElementById('saveBtn').addEventListener('click', saveToLocal);
+document.getElementById('exportBtn').addEventListener('click', exportAllData);
+
+document.getElementById('resetBtn').addEventListener('click', function() {
+  if (currentDataId) loadData(currentDataId);
+});
+
+document.getElementById('clearLogBtn').addEventListener('click', function() {
+  document.getElementById('logArea').innerHTML = '';
+});
+
+document.getElementById('aimMode').addEventListener('change', function() {
+  document.getElementById('closeKeyDiv').style.display = this.value === '0x02' ? 'block' : 'none';
+});
+
+document.getElementById('dataId').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    var id = this.value;
+    if (id) loadData(parseInt(id));
+  }
+});
+
+// 初始化
+loadCloudData();
+addLog('本地完整版已启动', 'info');
+</script>
+
+</body>
+</html>

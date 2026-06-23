@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>魔王S流浪用户版</title>
+<link rel="icon" href="https://hub.mowangs.com/log.png">
+<style>
+:root {
+  --primary-color: #FF3366;
+  --success-color: #00D084;
+  --warning-color: #FFAA00;
+  --danger-color: #FF4757;
+  --info-color: #8B5CFF;
+  --secondary-color: #00C2FF;
+  --bg-blur: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --radius: 16px;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  --gradient-bg: linear-gradient(135deg, #1A1A2E, #16213E, #0F3460);
+  --gradient-accent: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+}
+
+* { box-sizing: border-box; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; margin:0; padding:0; }
+
+body {
+  background: var(--gradient-bg);
+  color: #F0F0FF;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+      radial-gradient(circle at 20% 30%, rgba(255, 51, 102, 0.25) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(0, 194, 255, 0.25) 0%, transparent 40%),
+      radial-gradient(circle at 40% 80%, rgba(139, 92, 255, 0.25) 0%, transparent 40%),
+      radial-gradient(circle at 60% 20%, rgba(0, 208, 132, 0.2) 0%, transparent 40%);
+  z-index: -2;
+  animation: float 20s infinite ease-in-out alternate;
+}
+
+@keyframes float {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(5%, 5%) rotate(5deg); }
+}
+
+body::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+      linear-gradient(rgba(255, 51, 102, 0.15) 1.5px, transparent 1.5px),
+      linear-gradient(90deg, rgba(0, 194, 255, 0.15) 1.5px, transparent 1.5px),
+      linear-gradient(rgba(255, 170, 0, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 92, 255, 0.1) 1px, transparent 1px);
+  background-size: 60px 60px, 60px 60px, 30px 30px, 30px 30px;
+  z-index: -1;
+}
+
+header.toolbar {
+  position: sticky;
+  top: 0;
+  width:100%;
+  background: rgba(26, 26, 46, 0.95);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 2px solid rgba(255, 51, 102, 0.4);
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  padding:16px 24px;
+  z-index:100;
+  box-shadow: 0 8px 32px rgba(255, 51, 102, 0.25);
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+
+header h1 { 
+  font-size:1.5rem; 
+  letter-spacing:1.5px; 
+  font-weight: 800;
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.container {
+  display:grid;
+  grid-template-columns: 400px 1fr;
+  gap:20px;
+  padding:16px;
+  max-width:1800px;
+  width:100%;
+  height: 100vh;
+  margin:0 auto;
+}
+
+@media (max-width:1200px) {
+  .container { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--bg-blur);
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding:16px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(20px) saturate(180%);
+  overflow-y: auto;
+}
+
+h2 {
+  color:#FFFFFF;
+  font-size:1.1rem;
+  font-weight: 700;
+  border-bottom:2px solid rgba(255, 255, 255, 0.15);
+  padding-bottom:8px;
+  margin-bottom:12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+h2::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 24px;
+  background: var(--gradient-accent);
+  border-radius: 3px;
+}
+
+.status { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+
+.status-indicator { 
+  width:18px; 
+  height:18px; 
+  border-radius:50%; 
+  box-shadow: 0 0 15px currentColor;
+}
+
+.connected { 
+  background:var(--success-color); 
+  animation: pulse 1.5s infinite;
+  box-shadow: 0 0 20px var(--success-color);
+}
+
+.disconnected { 
+  background:var(--danger-color); 
+  box-shadow: 0 0 15px var(--danger-color);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); box-shadow: 0 0 15px var(--success-color); }
+  50% { transform: scale(1.1); box-shadow: 0 0 25px var(--success-color); }
+  100% { transform: scale(1); box-shadow: 0 0 15px var(--success-color); }
+}
+
+.device-info {
+  height: 100px;
+  background: rgba(30, 30, 50, 0.6);
+  border-radius:12px;
+  padding:12px;
+  font-family:'JetBrains Mono', 'Cascadia Code', monospace;
+  font-size:0.85rem;
+  white-space:pre-wrap;
+  margin-bottom:12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-y: auto;
+  line-height: 1.4;
+}
+
+.config-grid { display:grid; grid-template-columns: 1fr; gap:12px; }
+
+label { display:block; font-size:0.85rem; margin-bottom:6px; color: #E0E0FF; font-weight: 600; }
+
+input, select {
+  width:100%;
+  padding:10px 14px;
+  border-radius:10px;
+  border:2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 30, 50, 0.8);
+  color:#FFFFFF;
+  font-size:0.9rem;
+  font-weight: 500;
+}
+
+input:focus, select:focus { 
+  outline:none; 
+  border-color:var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(255, 51, 102, 0.2);
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23FF3366' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  padding-right: 48px;
+}
+
+select option { background: #2A2A4A; color: white; padding: 12px; }
+
+.mode-config-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.mode-select { flex: 1; }
+.mode-button { flex: 0 0 auto; }
+
+button {
+  border:none;
+  border-radius:10px;
+  padding:10px 16px;
+  font-weight:700;
+  cursor:pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: linear-gradient(135deg, var(--primary-color), #FF6B9D);
+  color:#fff;
+  box-shadow: 0 6px 20px rgba(255, 51, 102, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+button:hover { 
+  transform:translateY(-4px) scale(1.05); 
+  box-shadow: 0 12px 28px rgba(255, 51, 102, 0.6);
+}
+
+button:disabled { 
+  background:#555; 
+  cursor:not-allowed; 
+  transform:none; 
+  box-shadow:none; 
+  opacity: 0.6;
+}
+
+.btn-success { 
+  background: linear-gradient(135deg, var(--success-color), #00FFA3); 
+  box-shadow: 0 6px 20px rgba(0, 208, 132, 0.4);
+}
+
+.btn-warning { 
+  background: linear-gradient(135deg, var(--warning-color), #FFCC33); 
+  box-shadow: 0 6px 20px rgba(255, 170, 0, 0.4);
+}
+
+.btn-warning2 { 
+  background: linear-gradient(135deg, #8B5CFF, #C26CFF); 
+  box-shadow: 0 6px 20px rgba(139, 92, 255, 0.4);
+}
+
+.btn-danger { 
+  background: linear-gradient(135deg, var(--danger-color), #FF6B82); 
+  box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+}
+
+.btn-info { 
+  background: linear-gradient(135deg, var(--info-color), #B380FF); 
+  box-shadow: 0 6px 20px rgba(139, 92, 255, 0.4);
+}
+
+.phases-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.phases-container .card {
+  height: 350px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.phase-header {
+  display:flex; 
+  justify-content:space-between;
+  align-items:center; 
+  color:#FFFFFF; 
+  font-weight:800; 
+  padding:10px 0;
+  font-size: 1.1rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 16px;
+}
+
+.phase-content { margin-top:12px; }
+.phase-row { 
+  display:grid; 
+  grid-template-columns: 1fr; 
+  align-items:center; 
+  gap:8px; 
+  margin-bottom:10px; 
+}
+
+.phase-inputs { 
+  display:flex; 
+  align-items:center; 
+  gap:12px; 
+}
+
+.phase-input { 
+  width:80px; 
+  text-align:center; 
+  padding:8px; 
+  border-radius:8px; 
+  border:2px solid rgba(255, 255, 255, 0.1); 
+  background: rgba(30, 30, 50, 0.8); 
+  color:#FFFFFF; 
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.phase-input:focus {
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 3px rgba(0, 194, 255, 0.2);
+}
+
+.button-container {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.button-group button {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+}
+
+.log { 
+  overflow-y:auto; 
+  background: rgba(30, 30, 50, 0.8); 
+  border-radius:12px; 
+  padding:16px; 
+  font-family:'JetBrains Mono', 'Cascadia Code', monospace; 
+  font-size:0.85rem; 
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  line-height: 1.5;
+}
+
+.log::-webkit-scrollbar { width: 10px; }
+.log::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 5px; }
+.log::-webkit-scrollbar-thumb { background: var(--gradient-accent); border-radius: 5px; }
+
+.log-entry { 
+  margin-bottom:12px; 
+  padding-bottom:10px; 
+  border-bottom:1px solid rgba(255, 255, 255, 0.05); 
+}
+
+.timestamp { 
+  color:var(--secondary-color); 
+  font-size:0.85rem; 
+  margin-right:10px; 
+  font-weight: 600;
+}
+
+.announcement-card {
+  background: linear-gradient(135deg, rgba(255, 51, 102, 0.15), rgba(0, 194, 255, 0.15));
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(255, 51, 102, 0.25);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.announcement-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 28px;
+  background: linear-gradient(90deg, rgba(255, 51, 102, 0.3), rgba(0, 194, 255, 0.3));
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+
+.announcement-title {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-weight: 800;
+  color: #FFFFFF;
+  font-size: 1.3rem;
+}
+
+.announcement-toggle {
+  background: none;
+  border: none;
+  color: #FFFFFF;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.announcement-card.collapsed .announcement-toggle {
+  transform: rotate(180deg);
+}
+
+.announcement-content {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 28px;
+  line-height: 1.8;
+  transition: max-height 0.5s;
+  background: rgba(20, 20, 40, 0.8);
+}
+
+.announcement-card.collapsed .announcement-content {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.announcement-content p { margin-bottom: 16px; color: #E0E0FF; }
+.announcement-content h3 { color: var(--secondary-color); margin: 20px 0 12px; font-size: 1.2rem; }
+.announcement-content ul { margin-left: 24px; margin-bottom: 16px; }
+.announcement-content li { margin-bottom: 8px; color: #E0E0FF; }
+
+.announcement-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 28px;
+  background: rgba(20, 20, 40, 0.6);
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
+  color: #AAAAFF;
+}
+
+.announcement-refresh {
+  background: none;
+  border: none;
+  color: var(--secondary-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(0, 194, 255, 0.1);
+}
+
+.announcement-refresh:hover {
+  color: #FFFFFF;
+  background: rgba(0, 194, 255, 0.2);
+}
+
+.sep { 
+  width:2px; 
+  height:32px; 
+  background: linear-gradient(to bottom, transparent, var(--primary-color), transparent); 
+  margin:0 12px; 
+  border-radius:2px; 
+}
+
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .phases-container {
+    grid-template-columns: 1fr;
+  }
+  .button-group {
+    flex-direction: column;
+  }
+  .log { height: 500px; }
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 1;
+  height: 24px;
+  margin-right: 4px;
+  filter: brightness(1.5);
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="left-panel" style="height: 100%; overflow-y: auto;">
+    <div class="card" style="height: 100%;">
+      <h2>设备状态</h2>
+      <div style="display:flex; gap:8px; flex-wrap: wrap; margin-bottom:16px;">
+        <button id="requestDeviceBtn" class="btn-success">连接设备</button>
+        <button id="disconnectBtn" disabled>断开</button>
+        <button id="resetConfigBtn" class="btn-warning" disabled>恢复默认数据</button>
+        <button id="lightOnBtn">💡 开灯</button>
+        <button id="lightOffBtn">🔌 关灯</button>
+      </div>
+      <div class="status">
+        <div id="statusIndicator" class="status-indicator disconnected"></div>
+        <span id="statusText">未连接设备</span>
+      </div>
+      <div id="deviceInfo" class="device-info">未选择设备</div>
+
+      <h2>模式配置</h2>
+      <div class="mode-config-row">
+        <div class="mode-select">
+          <select id="moShiSelect">
+            <option value="0x01">右键单击开镜</option>
+            <option value="0x02" selected>右键长按开镜</option>
+          </select>
+        </div>
+        <div class="mode-button">
+          <button id="moShiConfigBtn" disabled class="btn-warning">修改模式</button>
+        </div>
+      </div>
+      <div id="guanBi" style="display: none;">
+      <h2>关闭按键</h2>
+        <div class="mode-config-row">
+          <div class="mode-select">
+            <select id="guanBiSelect">
+              <option value="" selected disabled>-- 请选择配置 --</option>
+              <option value="0x08">下侧键单击</option>
+              <option value="0x10">上侧键单击</option>
+              <option value="0x0A">右键+下侧键</option> 
+              <option value="0x25">滚轮双击</option>
+            </select>
+          </div>
+          <div class="mode-button">
+            <button id="guanBiConfigBtn" disabled class="btn-warning2">修改配置</button>
+          </div>
+        </div>
+      </div>
+      <h2>参数配置</h2>
+      <div class="config-grid">
+        <div>
+          <label>选择配置</label>
+          <select id="weaponSelect">
+            <option value="0x07">第一把</option>
+            <option value="0x08">第二把</option>
+            <option value="0x09">第三把</option>
+            <option value="0x0A">第四把</option>
+            <option value="0x0B">第五把</option>
+            <option value="0x0C">第六把</option>
+          </select>
+        </div>
+        <div>
+          <label>启动按键</label>
+          <select id="weaponTriggerKey">
+            <option value="0xF0">关闭功能</option>
+            <option value="0x08">下侧键单击</option>
+            <option value="0x10">上侧键单击</option>
+            <option value="0x14">滚轮+上侧键</option>
+            <option value="0x0C">滚轮+下侧键</option>
+            <option value="0x21">滚轮按住向上</option>
+            <option value="0x22">滚轮按住向下</option>
+            <option value="0x23">上侧键双击</option>
+            <option value="0x24">下侧键双击</option>
+            <option value="0x25" selected>滚轮双击</option>
+          </select>
+        </div>
+
+        <div>
+          <label>数据ID</label>
+          <input type="number" id="dataId" min="0" max="65535" />
+        </div>
+      </div>
+      <div class="button-container">
+        <div class="button-group">
+          <button id="getDataBtn" class="btn-info">获取本地数据</button>
+          <button id="applyWeaponConfigBtn" class="btn-success">保存配置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel" style="height: 100%; display: flex; flex-direction: column; gap: 16px; overflow: hidden;">
+    <div class="phases-container" style="flex-shrink: 0;">
+      <div class="card">
+        <div class="phase-header">
+          <div>阶段 1</div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>时间：</div>
+              <input type="number" id="phase1Time" class="phase-input" min="0" max="65535" value="0">
+              <span>-</span>
+              <input type="number" id="phase1TimeMax" class="phase-input" min="0" max="65535" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>延迟：</div>
+              <input type="number" id="phase1DelayMin" class="phase-input" min="0" max="255" value="0">
+              <span>-</span>
+              <input type="number" id="phase1DelayMax" class="phase-input" min="0" max="255" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>XY主：</div>
+              <input type="number" id="phase1XMain" class="phase-input" min="-128" max="127" value="0">
+              <span>,</span>
+              <input type="number" id="phase1YMain" class="phase-input" min="-128" max="127" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>XY备：</div>
+              <input type="number" id="phase1XAlt" class="phase-input" min="-128" max="127" value="0">
+              <span>,</span>
+              <input type="number" id="phase1YAlt" class="phase-input" min="-128" max="127" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>间隔：</div>
+              <input type="number" id="phase1Interval" class="phase-input" min="0" max="255" value="0">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="phase-header">
+          <div>阶段 2</div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>时间：</div>
+              <input type="number" id="phase2Time" class="phase-input" min="0" max="65535" value="0">
+              <span>-</span>
+              <input type="number" id="phase2TimeMax" class="phase-input" min="0" max="65535" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>延迟：</div>
+              <input type="number" id="phase2DelayMin" class="phase-input" min="0" max="255" value="0">
+              <span>-</span>
+              <input type="number" id="phase2DelayMax" class="phase-input" min="0" max="255" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>XY主：</div>
+              <input type="number" id="phase2XMain" class="phase-input" min="-128" max="127" value="0">
+              <span>,</span>
+              <input type="number" id="phase2YMain" class="phase-input" min="-128" max="127" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>XY备：</div>
+              <input type="number" id="phase2XAlt" class="phase-input" min="-128" max="127" value="0">
+              <span>,</span>
+              <input type="number" id="phase2YAlt" class="phase-input" min="-128" max="127" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>间隔：</div>
+              <input type="number" id="phase2Interval" class="phase-input" min="0" max="255" value="0">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="phase-header">
+          <div>阶段 3</div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>时间：</div>
+              <input type="number" id="phase3Time" class="phase-input" min="0" max="65535" value="0">
+              <span>-</span>
+              <input type="number" id="phase3TimeMax" class="phase-input" min="0" max="65535" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>延迟：</div>
+              <input type="number" id="phase3DelayMin" class="phase-input" min="0" max="255" value="0">
+              <span>-</span>
+              <input type="number" id="phase3DelayMax" class="phase-input" min="0" max="255" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>XY主：</div>
+              <input type="number" id="phase3XMain" class="phase-input" min="-128" max="127" value="0">
+              <span>,</span>
+              <input type="number" id="phase3YMain" class="phase-input" min="-128" max="127" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>XY备：</div>
+              <input type="number" id="phase3XAlt" class="phase-input" min="-128" max="127" value="0">
+              <span>,</span>
+              <input type="number" id="phase3YAlt" class="phase-input" min="-128" max="127" value="0">
+            </div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-inputs">
+              <div>间隔：</div>
+              <input type="number" id="phase3Interval" class="phase-input" min="0" max="255" value="0">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="flex: 1; min-height: 0; max-height: 100%; display: flex; flex-direction: column; overflow: hidden;">
+      <h2 style="flex-shrink: 0;">日志记录</h2>
+      <div id="communicationLog" class="log" style="flex: 1; min-height: 0; overflow-y: scroll;"></div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-shrink: 0;">
+        <button id="clearLogBtn">清除日志</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?3a53d83b33cda11228cdb2cded7d485c";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+
+(function() {
+  var device = null;
+  var isDeviceConnected = false;
+  var localData = {};
+  var localDataLoaded = false;
+  
+  var REPORT_ID = 0x20;
+  var DEVICE_FILTERS = [{ usagePage: 0xFF00, usage: 0x01 }];
+  
+  var WEAPON_SLOTS = {
+    '0x07': '第一把',
+    '0x08': '第二把', 
+    '0x09': '第三把',
+    '0x0A': '第四把',
+    '0x0B': '第五把',
+    '0x0C': '第六把'
+  };
+  
+  var CLOSE_KEY_MAP = {
+    '0x08': 0x08,
+    '0x10': 0x10,
+    '0x0A': 0x0A,
+    '0x25': 0x25
+  };
+  
+  function addLog(message, type) {
+    type = type || 'info';
+    var log = document.getElementById('communicationLog');
+    var timestamp = new Date().toLocaleTimeString();
+    var entry = document.createElement('div');
+    entry.className = 'log-entry';
+    
+    var colors = {
+      info: '#FFFFFF',
+      success: '#00D084',
+      warning: '#FFAA00',
+      error: '#FF4757',
+      data: '#00C2FF'
+    };
+    
+    entry.innerHTML = '<span class="timestamp">[' + timestamp + ']</span><span style="color:' + (colors[type] || colors.info) + '">' + message + '</span>';
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
+  
+  function signedToByte(val) {
+    val = parseInt(val) || 0;
+    if (val < 0) return val + 256;
+    return val;
+  }
+  
+  function byteToSigned(val) {
+    return val > 127 ? val - 256 : val;
+  }
+  
+  function packConfig() {
+    var buf = new Uint8Array(0x24);
+    
+    buf[0x00] = parseInt(document.getElementById('weaponTriggerKey').value);
+    
+    var p1Time = parseInt(document.getElementById('phase1Time').value) || 0;
+    var p1TimeMax = parseInt(document.getElementById('phase1TimeMax').value) || 0;
+    buf[0x01] = p1Time & 0xFF;
+    buf[0x02] = (p1Time >> 8) & 0xFF;
+    buf[0x03] = p1TimeMax & 0xFF;
+    buf[0x04] = (p1TimeMax >> 8) & 0xFF;
+    buf[0x05] = parseInt(document.getElementById('phase1DelayMin').value) || 0;
+    buf[0x06] = parseInt(document.getElementById('phase1DelayMax').value) || 0;
+    buf[0x07] = signedToByte(document.getElementById('phase1XMain').value);
+    buf[0x08] = signedToByte(document.getElementById('phase1YMain').value);
+    buf[0x09] = signedToByte(document.getElementById('phase1XAlt').value);
+    buf[0x0A] = signedToByte(document.getElementById('phase1YAlt').value);
+    buf[0x0B] = parseInt(document.getElementById('phase1Interval').value) || 0;
+    
+    var p2Time = parseInt(document.getElementById('phase2Time').value) || 0;
+    var p2TimeMax = parseInt(document.getElementById('phase2TimeMax').value) || 0;
+    buf[0x0C] = p2Time & 0xFF;
+    buf[0x0D] = (p2Time >> 8) & 0xFF;
+    buf[0x0E] = p2TimeMax & 0xFF;
+    buf[0x0F] = (p2TimeMax >> 8) & 0xFF;
+    buf[0x10] = parseInt(document.getElementById('phase2DelayMin').value) || 0;
+    buf[0x11] = parseInt(document.getElementById('phase2DelayMax').value) || 0;
+    buf[0x12] = signedToByte(document.getElementById('phase2XMain').value);
+    buf[0x13] = signedToByte(document.getElementById('phase2YMain').value);
+    buf[0x14] = signedToByte(document.getElementById('phase2XAlt').value);
+    buf[0x15] = signedToByte(document.getElementById('phase2YAlt').value);
+    buf[0x16] = parseInt(document.getElementById('phase2Interval').value) || 0;
+    
+    var p3Time = parseInt(document.getElementById('phase3Time').value) || 0;
+    var p3TimeMax = parseInt(document.getElementById('phase3TimeMax').value) || 0;
+    buf[0x17] = p3Time & 0xFF;
+    buf[0x18] = (p3Time >> 8) & 0xFF;
+    buf[0x19] = p3TimeMax & 0xFF;
+    buf[0x1A] = (p3TimeMax >> 8) & 0xFF;
+    buf[0x1B] = parseInt(document.getElementById('phase3DelayMin').value) || 0;
+    buf[0x1C] = parseInt(document.getElementById('phase3DelayMax').value) || 0;
+    buf[0x1D] = signedToByte(document.getElementById('phase3XMain').value);
+    buf[0x1E] = signedToByte(document.getElementById('phase3YMain').value);
+    buf[0x1F] = signedToByte(document.getElementById('phase3XAlt').value);
+    buf[0x20] = signedToByte(document.getElementById('phase3YAlt').value);
+    buf[0x21] = parseInt(document.getElementById('phase3Interval').value) || 0;
+    
+    var dataId = parseInt(document.getElementById('dataId').value) || 0;
+    buf[0x22] = dataId & 0xFF;
+    buf[0x23] = (dataId >> 8) & 0xFF;
+    
+    return buf;
+  }
+  
+  function unpackConfig(data) {
+    if (!data || data.length < 0x24) return;
+    
+    document.getElementById('weaponTriggerKey').value = '0x' + data[0x00].toString(16).padStart(2, '0').toUpperCase();
+    document.getElementById('phase1Time').value = (data[0x02] << 8) | data[0x01];
+    document.getElementById('phase1TimeMax').value = (data[0x04] << 8) | data[0x03];
+    document.getElementById('phase1DelayMin').value = data[0x05];
+    document.getElementById('phase1DelayMax').value = data[0x06];
+    document.getElementById('phase1XMain').value = byteToSigned(data[0x07]);
+    document.getElementById('phase1YMain').value = byteToSigned(data[0x08]);
+    document.getElementById('phase1XAlt').value = byteToSigned(data[0x09]);
+    document.getElementById('phase1YAlt').value = byteToSigned(data[0x0A]);
+    document.getElementById('phase1Interval').value = data[0x0B];
+    
+    document.getElementById('phase2Time').value = (data[0x0D] << 8) | data[0x0C];
+    document.getElementById('phase2TimeMax').value = (data[0x0F] << 8) | data[0x0E];
+    document.getElementById('phase2DelayMin').value = data[0x10];
+    document.getElementById('phase2DelayMax').value = data[0x11];
+    document.getElementById('phase2XMain').value = byteToSigned(data[0x12]);
+    document.getElementById('phase2YMain').value = byteToSigned(data[0x13]);
+    document.getElementById('phase2XAlt').value = byteToSigned(data[0x14]);
+    document.getElementById('phase2YAlt').value = byteToSigned(data[0x15]);
+    document.getElementById('phase2Interval').value = data[0x16];
+    
+    document.getElementById('phase3Time').value = (data[0x18] << 8) | data[0x17];
+    document.getElementById('phase3TimeMax').value = (data[0x1A] << 8) | data[0x19];
+    document.getElementById('phase3DelayMin').value = data[0x1B];
+    document.getElementById('phase3DelayMax').value = data[0x1C];
+    document.getElementById('phase3XMain').value = byteToSigned(data[0x1D]);
+    document.getElementById('phase3YMain').value = byteToSigned(data[0x1E]);
+    document.getElementById('phase3XAlt').value = byteToSigned(data[0x1F]);
+    document.getElementById('phase3YAlt').value = byteToSigned(data[0x20]);
+    document.getElementById('phase3Interval').value = data[0x21];
+    
+    var dataId = (data[0x23] << 8) | data[0x22];
+    document.getElementById('dataId').value = dataId;
+  }
+  
+  function loadCloudDataToUI(data) {
+    if (!data) return;
+    
+    // 调试日志：显示加载的数据
+    addLog('加载数据 - P1时间:' + data.phase1_time + ' 延迟:' + data.phase1_delay_min + '-' + data.phase1_delay_max + 
+           ' XY主:' + data.phase1_x_main + ',' + data.phase1_y_main + 
+           ' XY备:' + data.phase1_x_alt + ',' + data.phase1_y_alt, 'data');
+    
+    document.getElementById('phase1Time').value = parseInt(data.phase1_time) || 0;
+    document.getElementById('phase1TimeMax').value = parseInt(data.phase1_time_max) || 0;
+    document.getElementById('phase1DelayMin').value = parseInt(data.phase1_delay_min) || 0;
+    document.getElementById('phase1DelayMax').value = parseInt(data.phase1_delay_max) || 0;
+    document.getElementById('phase1XMain').value = parseInt(data.phase1_x_main) || 0;
+    document.getElementById('phase1YMain').value = parseInt(data.phase1_y_main) || 0;
+    document.getElementById('phase1XAlt').value = parseInt(data.phase1_x_alt) || 0;
+    document.getElementById('phase1YAlt').value = parseInt(data.phase1_y_alt) || 0;
+    document.getElementById('phase1Interval').value = parseInt(data.phase1_interval) || 0;
+    
+    document.getElementById('phase2Time').value = parseInt(data.phase2_time) || 0;
+    document.getElementById('phase2TimeMax').value = parseInt(data.phase2_time_max) || 0;
+    document.getElementById('phase2DelayMin').value = parseInt(data.phase2_delay_min) || 0;
+    document.getElementById('phase2DelayMax').value = parseInt(data.phase2_delay_max) || 0;
+    document.getElementById('phase2XMain').value = parseInt(data.phase2_x_main) || 0;
+    document.getElementById('phase2YMain').value = parseInt(data.phase2_y_main) || 0;
+    document.getElementById('phase2XAlt').value = parseInt(data.phase2_x_alt) || 0;
+    document.getElementById('phase2YAlt').value = parseInt(data.phase2_y_alt) || 0;
+    document.getElementById('phase2Interval').value = parseInt(data.phase2_interval) || 0;
+    
+    document.getElementById('phase3Time').value = parseInt(data.phase3_time) || 0;
+    document.getElementById('phase3TimeMax').value = parseInt(data.phase3_time_max) || 0;
+    document.getElementById('phase3DelayMin').value = parseInt(data.phase3_delay_min) || 0;
+    document.getElementById('phase3DelayMax').value = parseInt(data.phase3_delay_max) || 0;
+    document.getElementById('phase3XMain').value = parseInt(data.phase3_x_main) || 0;
+    document.getElementById('phase3YMain').value = parseInt(data.phase3_y_main) || 0;
+    document.getElementById('phase3XAlt').value = parseInt(data.phase3_x_alt) || 0;
+    document.getElementById('phase3YAlt').value = parseInt(data.phase3_y_alt) || 0;
+    document.getElementById('phase3Interval').value = parseInt(data.phase3_interval) || 0;
+  }
+  
+  async function sendData(command, ...args) {
+    if (!device) {
+      addLog('设备未连接', 'error');
+      return false;
+    }
+    
+    try {
+      var data = new Uint8Array([command, ...args]);
+      await device.sendReport(REPORT_ID, data);
+      addLog('发送: ' + Array.from(data).map(function(b) { return b.toString(16).padStart(2, '0'); }).join(' '), 'data');
+      return true;
+    } catch (e) {
+      addLog('发送失败: ' + e.message, 'error');
+      return false;
+    }
+  }
+  
+  async function loadLocalData() {
+    if (localDataLoaded) return true;
+    
+    try {
+      addLog('正在加载本地数据...', 'info');
+      var response = await fetch('mowang_data.json');
+      localData = await response.json();
+      localDataLoaded = true;
+      var count = Object.keys(localData).length;
+      addLog('本地数据加载完成，共 ' + count + ' 条配置', 'success');
+      return true;
+    } catch (e) {
+      addLog('加载本地数据失败: ' + e.message, 'error');
+      return false;
+    }
+  }
+  
+  function getLocalData(dataId) {
+    var id = String(dataId);
+    return localData[id] || null;
+  }
+  
+  function handleInputReport(event) {
+    var data = new Uint8Array(event.data.buffer);
+    var hexStr = Array.from(data).map(function(b) { return b.toString(16).padStart(2, '0'); }).join(' ');
+    addLog('收到数据: ' + hexStr, 'data');
+    
+    // 解析压枪配置数据 (36字节)
+    if (data[0] === 0xF2 && data[1] === 0x00 && data.length >= 36) {
+      try {
+        unpackConfig(data);
+        addLog('已从设备读取压枪配置', 'success');
+      } catch (e) {
+        addLog('解析配置数据失败: ' + e.message, 'error');
+      }
+    }
+    
+    // 解析模式配置
+    if (data[0] === 0xF1 && data[1] === 0x01) {
+      var modeValue = data[2];
+      document.getElementById('moShiSelect').value = '0x0' + modeValue;
+      addLog('已读取模式: ' + (modeValue === 1 ? '右键单击开镜' : '右键长按开镜'), 'success');
+    }
+    
+    // 解析关闭按键配置
+    if (data[0] === 0xF2 && data[1] === 0xFF) {
+      var keyValue = data[2];
+      document.getElementById('guanBiSelect').value = '0x' + keyValue.toString(16).padStart(2, '0');
+      addLog('已读取关闭按键配置', 'success');
+    }
+    
+    // 解析启动按键配置 (0xF3)
+    if (data[0] === 0xF3 && data[1] === 0x00) {
+      var triggerValue = data[2];
+      var triggerSelect = document.getElementById('weaponTriggerKey');
+      var triggerHex = '0x' + triggerValue.toString(16).padStart(2, '0').toUpperCase();
+      // 查找匹配的选项
+      for (var i = 0; i < triggerSelect.options.length; i++) {
+        if (triggerSelect.options[i].value === triggerHex) {
+          triggerSelect.value = triggerHex;
+          addLog('已读取启动按键: ' + triggerSelect.options[i].text, 'success');
+          break;
+        }
+      }
+    }
+    
+    // 解析数据ID (从配置数据的最后两个字节)
+    if (data[0] === 0xF2 && data[1] === 0x00 && data.length >= 36) {
+      var dataId = (data[35] << 8) | data[34];
+      if (dataId > 0 && dataId <= 65535) {
+        document.getElementById('dataId').value = dataId;
+        addLog('已读取数据ID: ' + dataId, 'success');
+      }
+    }
+  }
+  
+  function updateDeviceUI(connected) {
+    var indicator = document.getElementById('statusIndicator');
+    var statusText = document.getElementById('statusText');
+    var deviceInfo = document.getElementById('deviceInfo');
+    
+    if (connected) {
+      indicator.className = 'status-indicator connected';
+      statusText.textContent = '已连接设备';
+      deviceInfo.textContent = '设备: ' + device.productName + '\nVID: 0x' + device.vendorId.toString(16).toUpperCase() + '\nPID: 0x' + device.productId.toString(16).toUpperCase();
+      
+      document.getElementById('disconnectBtn').disabled = false;
+      document.getElementById('resetConfigBtn').disabled = false;
+      document.getElementById('moShiConfigBtn').disabled = false;
+      document.getElementById('guanBiConfigBtn').disabled = false;
+    } else {
+      indicator.className = 'status-indicator disconnected';
+      statusText.textContent = '未连接设备';
+      deviceInfo.textContent = '未选择设备';
+      
+      document.getElementById('disconnectBtn').disabled = true;
+      document.getElementById('resetConfigBtn').disabled = true;
+      document.getElementById('moShiConfigBtn').disabled = true;
+      document.getElementById('guanBiConfigBtn').disabled = true;
+    }
+  }
+  
+  document.getElementById('requestDeviceBtn').addEventListener('click', async function() {
+    try {
+      if (!navigator.hid) {
+        addLog('浏览器不支持WebHID API，请使用Chrome 89+', 'error');
+        return;
+      }
+      
+      var devices = await navigator.hid.requestDevice({ filters: DEVICE_FILTERS });
+      
+      if (devices && devices.length > 0) {
+        device = devices[0];
+        await device.open();
+        isDeviceConnected = true;
+        
+        updateDeviceUI(true);
+        
+        addLog('设备已连接: ' + device.productName, 'success');
+        
+        device.addEventListener('inputreport', handleInputReport);
+        
+        await loadLocalData();
+        
+        addLog('正在读取设备配置...', 'info');
+        await sendData(0x04, 0x00);
+      }
+    } catch (e) {
+      addLog('连接失败: ' + e.message, 'error');
+    }
+  });
+  
+  document.getElementById('disconnectBtn').addEventListener('click', async function() {
+    if (device) {
+      await device.close();
+      device = null;
+      isDeviceConnected = false;
+      
+      updateDeviceUI(false);
+      addLog('设备已断开', 'warning');
+    }
+  });
+  
+  document.getElementById('resetConfigBtn').addEventListener('click', async function() {
+    await sendData(0xF0);
+    addLog('已发送恢复默认数据命令', 'warning');
+  });
+  
+  document.getElementById('lightOnBtn').addEventListener('click', async function() {
+    await sendData(0x05, 0x01);
+    addLog('已发送开灯命令', 'info');
+  });
+  
+  document.getElementById('lightOffBtn').addEventListener('click', async function() {
+    await sendData(0x05, 0x00);
+    addLog('已发送关灯命令', 'info');
+  });
+  
+  document.getElementById('moShiConfigBtn').addEventListener('click', async function() {
+    var value = parseInt(document.getElementById('moShiSelect').value);
+    if (isNaN(value)) {
+      addLog('请选择模式', 'error');
+      return;
+    }
+    
+    if (document.getElementById('weaponTriggerKey').value === document.getElementById('guanBiSelect').value) {
+      alert('启动按键和关闭按键不能相同！');
+      return;
+    }
+    
+    await sendData(0xF1, 0x00, value);
+    await sendData(0xF1, 0x01, 0x00);
+    addLog('已修改模式: ' + document.getElementById('moShiSelect').options[document.getElementById('moShiSelect').selectedIndex].text, 'success');
+  });
+  
+  document.getElementById('guanBiConfigBtn').addEventListener('click', async function() {
+    var value = parseInt(document.getElementById('guanBiSelect').value);
+    if (isNaN(value)) {
+      addLog('请选择关闭按键', 'error');
+      return;
+    }
+    
+    await sendData(0xF2, 0x00, value);
+    await sendData(0xF2, 0x01, 0x00);
+    addLog('已修改关闭按键: ' + document.getElementById('guanBiSelect').options[document.getElementById('guanBiSelect').selectedIndex].text, 'success');
+  });
+  
+  document.getElementById('getDataBtn').addEventListener('click', async function() {
+    var dataId = parseInt(document.getElementById('dataId').value);
+    if (isNaN(dataId) || dataId < 0 || dataId > 65535) {
+      addLog('请输入有效的数据ID (0-65535)', 'error');
+      return;
+    }
+    
+    if (!localDataLoaded) {
+      await loadLocalData();
+    }
+    
+    var data = getLocalData(dataId);
+    if (data) {
+      loadCloudDataToUI(data);
+      addLog('已加载本地数据 ID: ' + dataId, 'success');
+    } else {
+      addLog('本地数据中不存在 ID: ' + dataId, 'warning');
+    }
+  });
+  
+  document.getElementById('applyWeaponConfigBtn').addEventListener('click', async function() {
+    if (!isDeviceConnected) {
+      addLog('请先连接设备', 'error');
+      return;
+    }
+    
+    var triggerKey = document.getElementById('weaponTriggerKey').value;
+    var closeKey = document.getElementById('guanBiSelect').value;
+    if (triggerKey && closeKey && triggerKey === closeKey) {
+      alert('启动按键和关闭按键不能相同！');
+      return;
+    }
+    
+    addLog('正在发送配置到设备...', 'info');
+    
+    var configData = packConfig();
+    var weaponSlot = parseInt(document.getElementById('weaponSelect').value);
+    var sendBuf = new Uint8Array([weaponSlot, 0x00].concat(Array.from(configData)));
+    
+    // 调试日志：显示发送的数据
+    var hexStr = Array.from(sendBuf).map(function(b) { return b.toString(16).padStart(2, '0'); }).join(' ');
+    addLog('发送数据 (' + sendBuf.length + '字节): ' + hexStr, 'data');
+    
+    // 显示解析的配置
+    addLog('配置详情 - P1时间:' + ((configData[0x02] << 8) | configData[0x01]) + 
+           ' 延迟:' + configData[0x05] + '-' + configData[0x06] + 
+           ' XY主:' + (configData[0x07] > 127 ? configData[0x07] - 256 : configData[0x07]) + ',' + (configData[0x08] > 127 ? configData[0x08] - 256 : configData[0x08]), 'data');
+    
+    try {
+      // 先配置模式
+      var modeValue = parseInt(document.getElementById('moShiSelect').value);
+      if (modeValue) {
+        await device.sendReport(REPORT_ID, new Uint8Array([0xF1, 0x00, modeValue]));
+        await device.sendReport(REPORT_ID, new Uint8Array([0xF1, 0x01, 0x00]));
+        addLog('模式已配置: ' + document.getElementById('moShiSelect').options[document.getElementById('moShiSelect').selectedIndex].text, 'success');
+      }
+      
+      // 再保存压枪参数
+      await device.sendReport(REPORT_ID, sendBuf);
+      addLog('压枪参数已保存到: ' + WEAPON_SLOTS[document.getElementById('weaponSelect').value], 'success');
+      
+      // 启用当前武器槽，避免保存后仍停留在旧配置
+      await device.sendReport(REPORT_ID, new Uint8Array([weaponSlot, 0x01]));
+      addLog('当前配置已启用', 'success');
+    } catch (e) {
+      addLog('保存配置失败: ' + e.message, 'error');
+    }
+  });
+  
+  document.getElementById('clearLogBtn').addEventListener('click', function() {
+    document.getElementById('communicationLog').innerHTML = '';
+    addLog('日志已清除', 'info');
+  });
+  
+  addLog('魔王S流浪用户版已启动', 'info');
+  addLog('数据来源: 本地 mowang_data.json', 'info');
+  addLog('请连接设备开始使用', 'info');
+  
+  loadLocalData();
+})();
+</script>
+</body>
+</html>
