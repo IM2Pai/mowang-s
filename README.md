@@ -32,7 +32,6 @@ http://localhost:8080
 - `index.html`：主界面和 WebHID 通信逻辑
 - `server.js`：本地静态文件服务器
 - `mowang_data.json`：本地配置数据
-- `local.html`：旧版/简化版页面
 
 ## 注意事项
 
