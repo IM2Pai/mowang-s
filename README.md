@@ -1,6 +1,6 @@
 # 魔王S流浪用户版
 
-魔王S流浪用户版是一个本地运行的魔王S鼠标配置工具。页面通过 WebHID 和设备通信，配置数据来自本地 `mowang_data.json`，不依赖云端接口。
+魔王S流浪用户版是一个本地运行的魔王S鼠标配置工具。页面通过 WebHID 和设备通信，配置数据默认来自本地 `mowang_data.json`，不依赖云端接口即可使用。
 
 ## 功能
 
@@ -29,16 +29,51 @@ http://localhost:8080
 
 如果你把项目放到其他目录，也可以在该目录中运行 `node server.js`。
 
+## 更新配置数据
+
+仓库中保留了一份数据更新脚本：[update_data.js](./update_data.js)。它会请求原始接口，把成功获取到的 ID 数据合并进本地 `mowang_data.json`。
+
+默认从当前数据最大 ID 的下一个 ID 开始，向后扫描 500 个 ID：
+
+```powershell
+node update_data.js
+```
+
+也可以手动指定范围：
+
+```powershell
+node update_data.js --start=1 --end=7000
+```
+
+如果以后接口参数变化，可以通过参数覆盖：
+
+```powershell
+node update_data.js --api=https://hub.mowangs.com/client/sjzgetdata/?id= --mcu=cb3c84ee
+```
+
+可选参数：
+
+- `--start=数字`：开始 ID
+- `--end=数字`：结束 ID
+- `--delay=毫秒`：每次请求之间的等待时间，默认 `30`
+- `--stop-empty=数字`：连续多少个 ID 没有数据后停止，默认 `100`
+- `--save-every=数字`：每检查多少个 ID 自动保存一次，默认 `100`
+- `--api=地址`：接口地址前缀，脚本会在末尾拼接 ID
+- `--mcu=值`：请求头里的 `mcu` 参数
+
 ## 文件说明
 
 - `index.html`：主界面和 WebHID 通信逻辑
 - `server.js`：本地静态文件服务器
 - `mowang_data.json`：本地配置数据
+- `update_data.js`：配置数据更新脚本
+- `logo.png`：本地图标
 
 ## 注意事项
 
 - WebHID 需要在浏览器中手动授权设备。
 - 保存配置后，如果重启电脑或重新连接设备，建议重新打开页面并确认当前配置槽已启用。
+- 数据更新脚本会访问原始接口，请合理控制请求范围和请求频率。
 - 本项目仅用于本地设备配置和学习交流。
 
 ## License
