@@ -767,6 +767,12 @@ input[type="number"]::-webkit-outer-spin-button {
   var LAST_CONFIG_KEY = 'mowang_last_config_v1';
   var hardwareConfigLoaded = false;
   var hardwareReadFallbackTimer = null;
+  var CONFIG_PHASE_COUNT = 5;
+  var CONFIG_PHASE_SIZE = 0x0B;
+  var CONFIG_HEADER_SIZE = 0x01;
+  var CONFIG_ID_SIZE = 0x02;
+  var CONFIG_MIN_PAYLOAD_SIZE = 0x24;
+  var CONFIG_PAYLOAD_SIZE = CONFIG_HEADER_SIZE + (CONFIG_PHASE_COUNT * CONFIG_PHASE_SIZE) + CONFIG_ID_SIZE;
   
   var WEAPON_SLOTS = {
     '0x07': '第一把',
@@ -832,109 +838,126 @@ input[type="number"]::-webkit-outer-spin-button {
     
     return false;
   }
+
+  function getPhaseBase(phase) {
+    return CONFIG_HEADER_SIZE + ((phase - 1) * CONFIG_PHASE_SIZE);
+  }
+
+  function getInputValue(id) {
+    var input = document.getElementById(id);
+    return input ? (parseInt(input.value) || 0) : 0;
+  }
+
+  function setInputValue(id, value) {
+    var input = document.getElementById(id);
+    if (input) input.value = value;
+  }
+
+  function readWordLE(data, offset) {
+    return (data[offset + 1] << 8) | data[offset];
+  }
+
+  function writeWordLE(buf, offset, value) {
+    value = parseInt(value) || 0;
+    buf[offset] = value & 0xFF;
+    buf[offset + 1] = (value >> 8) & 0xFF;
+  }
+
+  function buildPhaseCard(phase) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML =
+      '<div class="phase-header"><div>阶段 ' + phase + '</div></div>' +
+      '<div class="phase-content">' +
+        '<div class="phase-row"><div class="phase-inputs"><div>时间:</div><input type="number" id="phase' + phase + 'Time" class="phase-input" min="0" max="65535" value="0"><span>-</span><input type="number" id="phase' + phase + 'TimeMax" class="phase-input" min="0" max="65535" value="0"></div></div>' +
+        '<div class="phase-row"><div class="phase-inputs"><div>延迟:</div><input type="number" id="phase' + phase + 'DelayMin" class="phase-input" min="0" max="255" value="0"><span>-</span><input type="number" id="phase' + phase + 'DelayMax" class="phase-input" min="0" max="255" value="0"></div></div>' +
+        '<div class="phase-row"><div class="phase-inputs"><div>XY主:</div><input type="number" id="phase' + phase + 'XMain" class="phase-input" min="-128" max="127" value="0"><span>,</span><input type="number" id="phase' + phase + 'YMain" class="phase-input" min="-128" max="127" value="0"></div></div>' +
+        '<div class="phase-row"><div class="phase-inputs"><div>XY备:</div><input type="number" id="phase' + phase + 'XAlt" class="phase-input" min="-128" max="127" value="0"><span>,</span><input type="number" id="phase' + phase + 'YAlt" class="phase-input" min="-128" max="127" value="0"></div></div>' +
+        '<div class="phase-row"><div class="phase-inputs"><div>间隔:</div><input type="number" id="phase' + phase + 'Interval" class="phase-input" min="0" max="255" value="0"></div></div>' +
+      '</div>';
+    return card;
+  }
+
+  function ensurePhaseCards() {
+    var container = document.querySelector('.phases-container');
+    if (!container) return;
+    for (var phase = 4; phase <= CONFIG_PHASE_COUNT; phase++) {
+      if (!document.getElementById('phase' + phase + 'Time')) {
+        container.appendChild(buildPhaseCard(phase));
+      }
+    }
+  }
   
   function packConfig() {
-    var buf = new Uint8Array(0x24);
+    var buf = new Uint8Array(CONFIG_PAYLOAD_SIZE);
     
     buf[0x00] = parseInt(document.getElementById('weaponTriggerKey').value);
     
-    var p1Time = parseInt(document.getElementById('phase1Time').value) || 0;
-    var p1TimeMax = parseInt(document.getElementById('phase1TimeMax').value) || 0;
-    buf[0x01] = p1Time & 0xFF;
-    buf[0x02] = (p1Time >> 8) & 0xFF;
-    buf[0x03] = p1TimeMax & 0xFF;
-    buf[0x04] = (p1TimeMax >> 8) & 0xFF;
-    buf[0x05] = parseInt(document.getElementById('phase1DelayMin').value) || 0;
-    buf[0x06] = parseInt(document.getElementById('phase1DelayMax').value) || 0;
-    buf[0x07] = signedToByte(document.getElementById('phase1XMain').value);
-    buf[0x08] = signedToByte(document.getElementById('phase1YMain').value);
-    buf[0x09] = signedToByte(document.getElementById('phase1XAlt').value);
-    buf[0x0A] = signedToByte(document.getElementById('phase1YAlt').value);
-    buf[0x0B] = parseInt(document.getElementById('phase1Interval').value) || 0;
-    
-    var p2Time = parseInt(document.getElementById('phase2Time').value) || 0;
-    var p2TimeMax = parseInt(document.getElementById('phase2TimeMax').value) || 0;
-    buf[0x0C] = p2Time & 0xFF;
-    buf[0x0D] = (p2Time >> 8) & 0xFF;
-    buf[0x0E] = p2TimeMax & 0xFF;
-    buf[0x0F] = (p2TimeMax >> 8) & 0xFF;
-    buf[0x10] = parseInt(document.getElementById('phase2DelayMin').value) || 0;
-    buf[0x11] = parseInt(document.getElementById('phase2DelayMax').value) || 0;
-    buf[0x12] = signedToByte(document.getElementById('phase2XMain').value);
-    buf[0x13] = signedToByte(document.getElementById('phase2YMain').value);
-    buf[0x14] = signedToByte(document.getElementById('phase2XAlt').value);
-    buf[0x15] = signedToByte(document.getElementById('phase2YAlt').value);
-    buf[0x16] = parseInt(document.getElementById('phase2Interval').value) || 0;
-    
-    var p3Time = parseInt(document.getElementById('phase3Time').value) || 0;
-    var p3TimeMax = parseInt(document.getElementById('phase3TimeMax').value) || 0;
-    buf[0x17] = p3Time & 0xFF;
-    buf[0x18] = (p3Time >> 8) & 0xFF;
-    buf[0x19] = p3TimeMax & 0xFF;
-    buf[0x1A] = (p3TimeMax >> 8) & 0xFF;
-    buf[0x1B] = parseInt(document.getElementById('phase3DelayMin').value) || 0;
-    buf[0x1C] = parseInt(document.getElementById('phase3DelayMax').value) || 0;
-    buf[0x1D] = signedToByte(document.getElementById('phase3XMain').value);
-    buf[0x1E] = signedToByte(document.getElementById('phase3YMain').value);
-    buf[0x1F] = signedToByte(document.getElementById('phase3XAlt').value);
-    buf[0x20] = signedToByte(document.getElementById('phase3YAlt').value);
-    buf[0x21] = parseInt(document.getElementById('phase3Interval').value) || 0;
+    for (var phase = 1; phase <= CONFIG_PHASE_COUNT; phase++) {
+      var base = getPhaseBase(phase);
+      writeWordLE(buf, base, getInputValue('phase' + phase + 'Time'));
+      writeWordLE(buf, base + 0x02, getInputValue('phase' + phase + 'TimeMax'));
+      buf[base + 0x04] = getInputValue('phase' + phase + 'DelayMin');
+      buf[base + 0x05] = getInputValue('phase' + phase + 'DelayMax');
+      buf[base + 0x06] = signedToByte(getInputValue('phase' + phase + 'XMain'));
+      buf[base + 0x07] = signedToByte(getInputValue('phase' + phase + 'YMain'));
+      buf[base + 0x08] = signedToByte(getInputValue('phase' + phase + 'XAlt'));
+      buf[base + 0x09] = signedToByte(getInputValue('phase' + phase + 'YAlt'));
+      buf[base + 0x0A] = getInputValue('phase' + phase + 'Interval');
+    }
     
     var dataId = parseInt(document.getElementById('dataId').value) || 0;
-    buf[0x22] = dataId & 0xFF;
-    buf[0x23] = (dataId >> 8) & 0xFF;
+    var idOffset = CONFIG_PAYLOAD_SIZE - CONFIG_ID_SIZE;
+    writeWordLE(buf, idOffset, dataId);
     
     return buf;
   }
   
   function unpackConfig(data) {
-    if (!data || data.length < 0x24) return;
+    if (!data || data.length < CONFIG_MIN_PAYLOAD_SIZE) return;
     
     setSelectValue('weaponTriggerKey', toHexByte(data[0x00]));
-    document.getElementById('phase1Time').value = (data[0x02] << 8) | data[0x01];
-    document.getElementById('phase1TimeMax').value = (data[0x04] << 8) | data[0x03];
-    document.getElementById('phase1DelayMin').value = data[0x05];
-    document.getElementById('phase1DelayMax').value = data[0x06];
-    document.getElementById('phase1XMain').value = byteToSigned(data[0x07]);
-    document.getElementById('phase1YMain').value = byteToSigned(data[0x08]);
-    document.getElementById('phase1XAlt').value = byteToSigned(data[0x09]);
-    document.getElementById('phase1YAlt').value = byteToSigned(data[0x0A]);
-    document.getElementById('phase1Interval').value = data[0x0B];
+
+    for (var phase = 1; phase <= CONFIG_PHASE_COUNT; phase++) {
+      var base = getPhaseBase(phase);
+      if (data.length < base + CONFIG_PHASE_SIZE) {
+        setInputValue('phase' + phase + 'Time', 0);
+        setInputValue('phase' + phase + 'TimeMax', 0);
+        setInputValue('phase' + phase + 'DelayMin', 0);
+        setInputValue('phase' + phase + 'DelayMax', 0);
+        setInputValue('phase' + phase + 'XMain', 0);
+        setInputValue('phase' + phase + 'YMain', 0);
+        setInputValue('phase' + phase + 'XAlt', 0);
+        setInputValue('phase' + phase + 'YAlt', 0);
+        setInputValue('phase' + phase + 'Interval', 0);
+        continue;
+      }
+      setInputValue('phase' + phase + 'Time', readWordLE(data, base));
+      setInputValue('phase' + phase + 'TimeMax', readWordLE(data, base + 0x02));
+      setInputValue('phase' + phase + 'DelayMin', data[base + 0x04]);
+      setInputValue('phase' + phase + 'DelayMax', data[base + 0x05]);
+      setInputValue('phase' + phase + 'XMain', byteToSigned(data[base + 0x06]));
+      setInputValue('phase' + phase + 'YMain', byteToSigned(data[base + 0x07]));
+      setInputValue('phase' + phase + 'XAlt', byteToSigned(data[base + 0x08]));
+      setInputValue('phase' + phase + 'YAlt', byteToSigned(data[base + 0x09]));
+      setInputValue('phase' + phase + 'Interval', data[base + 0x0A]);
+    }
     
-    document.getElementById('phase2Time').value = (data[0x0D] << 8) | data[0x0C];
-    document.getElementById('phase2TimeMax').value = (data[0x0F] << 8) | data[0x0E];
-    document.getElementById('phase2DelayMin').value = data[0x10];
-    document.getElementById('phase2DelayMax').value = data[0x11];
-    document.getElementById('phase2XMain').value = byteToSigned(data[0x12]);
-    document.getElementById('phase2YMain').value = byteToSigned(data[0x13]);
-    document.getElementById('phase2XAlt').value = byteToSigned(data[0x14]);
-    document.getElementById('phase2YAlt').value = byteToSigned(data[0x15]);
-    document.getElementById('phase2Interval').value = data[0x16];
-    
-    document.getElementById('phase3Time').value = (data[0x18] << 8) | data[0x17];
-    document.getElementById('phase3TimeMax').value = (data[0x1A] << 8) | data[0x19];
-    document.getElementById('phase3DelayMin').value = data[0x1B];
-    document.getElementById('phase3DelayMax').value = data[0x1C];
-    document.getElementById('phase3XMain').value = byteToSigned(data[0x1D]);
-    document.getElementById('phase3YMain').value = byteToSigned(data[0x1E]);
-    document.getElementById('phase3XAlt').value = byteToSigned(data[0x1F]);
-    document.getElementById('phase3YAlt').value = byteToSigned(data[0x20]);
-    document.getElementById('phase3Interval').value = data[0x21];
-    
-    var dataId = (data[0x23] << 8) | data[0x22];
+    var idOffset = data.length >= CONFIG_PAYLOAD_SIZE ? CONFIG_PAYLOAD_SIZE - CONFIG_ID_SIZE : CONFIG_MIN_PAYLOAD_SIZE - CONFIG_ID_SIZE;
+    var dataId = readWordLE(data, idOffset);
     document.getElementById('dataId').value = dataId;
   }
   
   function getConfigPayloadFromReport(data) {
-    if (!data || data.length < 0x24) return null;
+    if (!data || data.length < CONFIG_MIN_PAYLOAD_SIZE) return null;
     
-    if (data.length >= 0x26 && data[1] === 0x00) {
+    if (data.length >= CONFIG_MIN_PAYLOAD_SIZE + 2 && data[1] === 0x00) {
       if ((data[0] >= 0x07 && data[0] <= 0x0C) || data[0] === 0xF2) {
-        return data.slice(0x02, 0x26);
+        return data.slice(0x02, Math.min(data.length, CONFIG_PAYLOAD_SIZE + 2));
       }
     }
     
-    return data.slice(0x00, 0x24);
+    return data.slice(0x00, Math.min(data.length, CONFIG_PAYLOAD_SIZE));
   }
   
   function saveLastConfig(source) {
@@ -968,7 +991,7 @@ input[type="number"]::-webkit-outer-spin-button {
       }
       
       var snapshot = JSON.parse(raw);
-      if (!snapshot || !snapshot.config || snapshot.config.length < 0x24) {
+      if (!snapshot || !snapshot.config || snapshot.config.length < CONFIG_MIN_PAYLOAD_SIZE) {
         addLog('上次保存的本地配置无效', 'warning');
         return false;
       }
@@ -1027,6 +1050,18 @@ input[type="number"]::-webkit-outer-spin-button {
     document.getElementById('phase3XAlt').value = parseInt(data.phase3_x_alt) || 0;
     document.getElementById('phase3YAlt').value = parseInt(data.phase3_y_alt) || 0;
     document.getElementById('phase3Interval').value = parseInt(data.phase3_interval) || 0;
+
+    for (var phase = 4; phase <= CONFIG_PHASE_COUNT; phase++) {
+      setInputValue('phase' + phase + 'Time', parseInt(data['phase' + phase + '_time']) || 0);
+      setInputValue('phase' + phase + 'TimeMax', parseInt(data['phase' + phase + '_time_max']) || 0);
+      setInputValue('phase' + phase + 'DelayMin', parseInt(data['phase' + phase + '_delay_min']) || 0);
+      setInputValue('phase' + phase + 'DelayMax', parseInt(data['phase' + phase + '_delay_max']) || 0);
+      setInputValue('phase' + phase + 'XMain', parseInt(data['phase' + phase + '_x_main']) || 0);
+      setInputValue('phase' + phase + 'YMain', parseInt(data['phase' + phase + '_y_main']) || 0);
+      setInputValue('phase' + phase + 'XAlt', parseInt(data['phase' + phase + '_x_alt']) || 0);
+      setInputValue('phase' + phase + 'YAlt', parseInt(data['phase' + phase + '_y_alt']) || 0);
+      setInputValue('phase' + phase + 'Interval', parseInt(data['phase' + phase + '_interval']) || 0);
+    }
   }
   
   async function sendData(command, ...args) {
@@ -1073,8 +1108,8 @@ input[type="number"]::-webkit-outer-spin-button {
     var hexStr = Array.from(data).map(function(b) { return b.toString(16).padStart(2, '0'); }).join(' ');
     addLog('收到数据: ' + hexStr, 'data');
     
-    // 解析压枪配置数据 (36字节，部分固件会带2字节命令头)
-    if ((data[0] === 0xF2 && data[1] === 0x00 && data.length >= 36) || (data[0] >= 0x07 && data[0] <= 0x0C && data[1] === 0x00 && data.length >= 38)) {
+    // 解析压枪配置数据，兼容旧 3 段和新 5 段回包，部分固件会带 2 字节命令头。
+    if ((data[0] === 0xF2 && data[1] === 0x00 && data.length >= CONFIG_MIN_PAYLOAD_SIZE) || (data[0] >= 0x07 && data[0] <= 0x0C && data[1] === 0x00 && data.length >= CONFIG_MIN_PAYLOAD_SIZE + 2)) {
       try {
         var configPayload = getConfigPayloadFromReport(data);
         if (!configPayload) return;
@@ -1121,10 +1156,11 @@ input[type="number"]::-webkit-outer-spin-button {
     }
     
     // 解析数据ID (从配置数据的最后两个字节)
-    if ((data[0] === 0xF2 && data[1] === 0x00 && data.length >= 36) || (data[0] >= 0x07 && data[0] <= 0x0C && data[1] === 0x00 && data.length >= 38)) {
+    if ((data[0] === 0xF2 && data[1] === 0x00 && data.length >= CONFIG_MIN_PAYLOAD_SIZE) || (data[0] >= 0x07 && data[0] <= 0x0C && data[1] === 0x00 && data.length >= CONFIG_MIN_PAYLOAD_SIZE + 2)) {
       var idPayload = getConfigPayloadFromReport(data);
       if (!idPayload) return;
-      var dataId = (idPayload[35] << 8) | idPayload[34];
+      var idOffset = idPayload.length >= CONFIG_PAYLOAD_SIZE ? CONFIG_PAYLOAD_SIZE - CONFIG_ID_SIZE : CONFIG_MIN_PAYLOAD_SIZE - CONFIG_ID_SIZE;
+      var dataId = readWordLE(idPayload, idOffset);
       if (dataId > 0 && dataId <= 65535) {
         document.getElementById('dataId').value = dataId;
         addLog('已读取数据ID: ' + dataId, 'success');
@@ -1332,6 +1368,7 @@ input[type="number"]::-webkit-outer-spin-button {
   addLog('数据来源: 本地 mowang_data.json', 'info');
   addLog('请连接设备开始使用', 'info');
   
+  ensurePhaseCards();
   loadLocalData();
 })();
 </script>
