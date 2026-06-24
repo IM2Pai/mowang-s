@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>魔王S 5段协议实验</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #111827;
+      color: #e5e7eb;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    h1 {
+      margin: 0 0 16px;
+      font-size: 26px;
+    }
+    .toolbar, .grid, .panel {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .panel {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      background: #1f2937;
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      align-items: stretch;
+    }
+    button {
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      background: #2563eb;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #4b5563;
+      cursor: not-allowed;
+    }
+    button.warn {
+      background: #d97706;
+    }
+    button.danger {
+      background: #dc2626;
+    }
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+    input, select, textarea {
+      border: 1px solid #4b5563;
+      border-radius: 6px;
+      padding: 8px 10px;
+      background: #0f172a;
+      color: #e5e7eb;
+      font-family: "Cascadia Code", Consolas, monospace;
+    }
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+    .muted {
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .log {
+      min-height: 280px;
+      max-height: 460px;
+      overflow: auto;
+      white-space: pre-wrap;
+      background: #020617;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>魔王S 5段协议实验</h1>
+  <div class="muted">
+    这个页面用于手动验证 5 段写入格式。它不会自动发送实验包；连接设备后，只有点击对应实验按钮才会发送。
+  </div>
+
+  <section class="panel">
+    <div class="toolbar">
+      <button id="connectBtn">连接设备</button>
+      <button id="readBtn" disabled>读取配置 04 00</button>
+      <button id="enableBtn" disabled>启用当前槽位</button>
+      <button id="clearBtn">清空日志</button>
+    </div>
+    <div class="grid">
+      <label>武器槽位
+        <select id="slot">
+          <option value="0x07">第一把 0x07</option>
+          <option value="0x08">第二把 0x08</option>
+          <option value="0x09">第三把 0x09</option>
+          <option value="0x0A">第四把 0x0A</option>
+          <option value="0x0B">第五把 0x0B</option>
+          <option value="0x0C">第六把 0x0C</option>
+        </select>
+      </label>
+      <label>触发键
+        <select id="trigger">
+          <option value="0x25">滚轮双击 0x25</option>
+          <option value="0x24">下侧键双击 0x24</option>
+          <option value="0x23">上侧键双击 0x23</option>
+          <option value="0x08">下侧键单击 0x08</option>
+          <option value="0x10">上侧键单击 0x10</option>
+        </select>
+      </label>
+      <label>数据 ID
+        <input id="dataId" type="number" min="0" max="65535" value="0">
+      </label>
+      <label>Report ID
+        <input id="reportId" value="0x20">
+      </label>
+      <label>发送实验包后
+        <select id="afterSend">
+          <option value="enable">自动启用当前槽位并读取回写</option>
+          <option value="none">只发送，不自动启用</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>实验包</h2>
+    <div class="grid">
+      <button id="sendCompat" disabled class="warn">A 兼容旧ID后追加5段</button>
+      <button id="sendFull63" disabled class="warn">B A格式补满63字节</button>
+      <button id="sendContinuous" disabled class="warn">C 连续5段+末尾ID</button>
+      <button id="sendSub02" disabled class="danger">D 槽位 0x02 子命令</button>
+      <button id="sendTailCount1" disabled class="warn">E 63字节尾部 05 00 00</button>
+      <button id="sendTailCount2" disabled class="warn">F 63字节尾部 00 00 05</button>
+    </div>
+    <div class="muted">
+      建议每次只测一个实验：发送、启用、读取回写、再实际开镜开火观察轨迹。若设备回写第 4/5 段仍为 0，说明该格式未被固件保存。
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>自定义包</h2>
+    <textarea id="customHex" spellcheck="false" placeholder="例如: 07 00 25 ..."></textarea>
+    <div class="toolbar">
+      <button id="sendCustom" disabled class="danger">发送自定义十六进制</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>日志</h2>
+    <div id="log" class="log"></div>
+  </section>
+</main>
+
+<script>
+(function() {
+  var device = null;
+  var filters = [{ usagePage: 0xFF00, usage: 0x01 }];
+  var phaseSize = 0x0B;
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function num(id) {
+    return parseInt($(id).value) || 0;
+  }
+
+  function hexByte(value) {
+    return value.toString(16).padStart(2, '0');
+  }
+
+  function log(message) {
+    var time = new Date().toLocaleTimeString();
+    $('log').textContent += '[' + time + '] ' + message + '\n';
+    $('log').scrollTop = $('log').scrollHeight;
+  }
+
+  function parseHexInput(value) {
+    var cleaned = value.replace(/0x/gi, ' ').replace(/[^0-9a-fA-F]+/g, ' ').trim();
+    if (!cleaned) return new Uint8Array();
+    var parts = cleaned.split(/\s+/);
+    if (parts.some(function(part) { return part.length > 2; })) {
+      throw new Error('每个字节必须是 00-FF');
+    }
+    return new Uint8Array(parts.map(function(part) {
+      var value = parseInt(part, 16);
+      if (!Number.isFinite(value) || value < 0 || value > 255) {
+        throw new Error('无效字节: ' + part);
+      }
+      return value;
+    }));
+  }
+
+  function toHex(data) {
+    return Array.from(data).map(hexByte).join(' ');
+  }
+
+  function signedByte(value) {
+    return value < 0 ? value + 256 : value;
+  }
+
+  function writeWordLE(buf, offset, value) {
+    value = parseInt(value) || 0;
+    buf[offset] = value & 0xFF;
+    buf[offset + 1] = (value >> 8) & 0xFF;
+  }
+
+  function fillPhase(buf, base, x) {
+    writeWordLE(buf, base, 500);
+    writeWordLE(buf, base + 2, 500);
+    buf[base + 4] = 5;
+    buf[base + 5] = 5;
+    buf[base + 6] = signedByte(x);
+    buf[base + 7] = 2;
+    buf[base + 8] = signedByte(x);
+    buf[base + 9] = 2;
+    buf[base + 10] = 10;
+  }
+
+  function buildPayload(layout) {
+    var trigger = parseInt($('trigger').value);
+    var dataId = num('dataId');
+    var xs = [-3, 3, -3, 3, -3];
+    var payload;
+
+    if (layout === 'continuous') {
+      payload = new Uint8Array(1 + phaseSize * 5 + 2);
+      payload[0] = trigger;
+      for (var i = 0; i < 5; i++) fillPhase(payload, 1 + i * phaseSize, xs[i]);
+      writeWordLE(payload, payload.length - 2, dataId);
+      return payload;
+    }
+
+    payload = new Uint8Array(1 + phaseSize * 5 + 2);
+    payload[0] = trigger;
+    for (var phase = 0; phase < 3; phase++) fillPhase(payload, 1 + phase * phaseSize, xs[phase]);
+    writeWordLE(payload, 0x22, dataId);
+    fillPhase(payload, 0x24, xs[3]);
+    fillPhase(payload, 0x2F, xs[4]);
+    return payload;
+  }
+
+  function withHeader(payload, subCommand) {
+    var slot = parseInt($('slot').value);
+    return new Uint8Array([slot, subCommand].concat(Array.from(payload)));
+  }
+
+  function pad63(data, tail) {
+    var out = new Uint8Array(63);
+    out.set(data.slice(0, 63));
+    if (tail) out.set(tail, 60);
+    return out;
+  }
+
+  async function sendBytes(data, label) {
+    if (!device) {
+      log('未连接设备');
+      return;
+    }
+    var reportId = parseInt($('reportId').value);
+    log('发送 ' + label + ' (' + data.length + '字节): ' + toHex(data));
+    await device.sendReport(reportId, data);
+  }
+
+  function sleep(ms) {
+    return new Promise(function(resolve) {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  async function sendExperiment(data, label) {
+    await sendBytes(data, label);
+    if ($('afterSend').value !== 'enable') return;
+    await sleep(250);
+    await sendBytes(new Uint8Array([parseInt($('slot').value), 0x01]), '自动启用当前槽位');
+  }
+
+  function setEnabled(enabled) {
+    ['readBtn', 'enableBtn', 'sendCompat', 'sendFull63', 'sendContinuous', 'sendSub02', 'sendTailCount1', 'sendTailCount2', 'sendCustom'].forEach(function(id) {
+      $(id).disabled = !enabled;
+    });
+  }
+
+  $('connectBtn').addEventListener('click', async function() {
+    if (!navigator.hid) {
+      log('当前浏览器不支持 WebHID，请用 Chrome/Edge 打开');
+      return;
+    }
+    var devices = await navigator.hid.requestDevice({ filters: filters });
+    if (!devices.length) {
+      log('未选择设备');
+      return;
+    }
+    device = devices[0];
+    await device.open();
+    device.addEventListener('inputreport', function(event) {
+      var data = new Uint8Array(event.data.buffer);
+      log('收到 reportId=0x' + event.reportId.toString(16) + ' (' + data.length + '字节): ' + toHex(data));
+    });
+    setEnabled(true);
+    log('设备已连接: ' + (device.productName || '未知设备'));
+  });
+
+  $('readBtn').addEventListener('click', function() {
+    sendBytes(new Uint8Array([0x04, 0x00]), '读取配置 04 00');
+  });
+
+  $('enableBtn').addEventListener('click', function() {
+    sendBytes(new Uint8Array([parseInt($('slot').value), 0x01]), '启用当前槽位');
+  });
+
+  $('sendCompat').addEventListener('click', function() {
+    sendExperiment(withHeader(buildPayload('compat'), 0x00), 'A 兼容旧ID后追加5段');
+  });
+
+  $('sendFull63').addEventListener('click', function() {
+    sendExperiment(pad63(withHeader(buildPayload('compat'), 0x00)), 'B A格式补满63字节');
+  });
+
+  $('sendContinuous').addEventListener('click', function() {
+    sendExperiment(withHeader(buildPayload('continuous'), 0x00), 'C 连续5段+末尾ID');
+  });
+
+  $('sendSub02').addEventListener('click', function() {
+    sendExperiment(withHeader(buildPayload('compat'), 0x02), 'D 槽位 0x02 子命令');
+  });
+
+  $('sendTailCount1').addEventListener('click', function() {
+    sendExperiment(pad63(withHeader(buildPayload('compat'), 0x00), [0x05, 0x00, 0x00]), 'E 63字节尾部 05 00 00');
+  });
+
+  $('sendTailCount2').addEventListener('click', function() {
+    sendExperiment(pad63(withHeader(buildPayload('compat'), 0x00), [0x00, 0x00, 0x05]), 'F 63字节尾部 00 00 05');
+  });
+
+  $('sendCustom').addEventListener('click', function() {
+    try {
+      sendBytes(parseHexInput($('customHex').value), '自定义包');
+    } catch (error) {
+      log('自定义包错误: ' + error.message);
+    }
+  });
+
+  $('clearBtn').addEventListener('click', function() {
+    $('log').textContent = '';
+  });
+
+  log('实验页已就绪');
+})();
+</script>
+</body>
+</html>
