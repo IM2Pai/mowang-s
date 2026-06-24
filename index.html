@@ -772,6 +772,8 @@ input[type="number"]::-webkit-outer-spin-button {
   var CONFIG_HEADER_SIZE = 0x01;
   var CONFIG_ID_SIZE = 0x02;
   var CONFIG_MIN_PAYLOAD_SIZE = 0x24;
+  var CONFIG_LEGACY_PHASE_COUNT = 3;
+  var CONFIG_ID_OFFSET = CONFIG_HEADER_SIZE + (CONFIG_LEGACY_PHASE_COUNT * CONFIG_PHASE_SIZE);
   var CONFIG_PAYLOAD_SIZE = CONFIG_HEADER_SIZE + (CONFIG_PHASE_COUNT * CONFIG_PHASE_SIZE) + CONFIG_ID_SIZE;
   
   var WEAPON_SLOTS = {
@@ -840,7 +842,10 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 
   function getPhaseBase(phase) {
-    return CONFIG_HEADER_SIZE + ((phase - 1) * CONFIG_PHASE_SIZE);
+    if (phase <= CONFIG_LEGACY_PHASE_COUNT) {
+      return CONFIG_HEADER_SIZE + ((phase - 1) * CONFIG_PHASE_SIZE);
+    }
+    return CONFIG_MIN_PAYLOAD_SIZE + ((phase - CONFIG_LEGACY_PHASE_COUNT - 1) * CONFIG_PHASE_SIZE);
   }
 
   function getInputValue(id) {
@@ -907,8 +912,7 @@ input[type="number"]::-webkit-outer-spin-button {
     }
     
     var dataId = parseInt(document.getElementById('dataId').value) || 0;
-    var idOffset = CONFIG_PAYLOAD_SIZE - CONFIG_ID_SIZE;
-    writeWordLE(buf, idOffset, dataId);
+    writeWordLE(buf, CONFIG_ID_OFFSET, dataId);
     
     return buf;
   }
@@ -943,8 +947,7 @@ input[type="number"]::-webkit-outer-spin-button {
       setInputValue('phase' + phase + 'Interval', data[base + 0x0A]);
     }
     
-    var idOffset = data.length >= CONFIG_PAYLOAD_SIZE ? CONFIG_PAYLOAD_SIZE - CONFIG_ID_SIZE : CONFIG_MIN_PAYLOAD_SIZE - CONFIG_ID_SIZE;
-    var dataId = readWordLE(data, idOffset);
+    var dataId = readWordLE(data, CONFIG_ID_OFFSET);
     document.getElementById('dataId').value = dataId;
   }
   
@@ -1159,8 +1162,7 @@ input[type="number"]::-webkit-outer-spin-button {
     if ((data[0] === 0xF2 && data[1] === 0x00 && data.length >= CONFIG_MIN_PAYLOAD_SIZE) || (data[0] >= 0x07 && data[0] <= 0x0C && data[1] === 0x00 && data.length >= CONFIG_MIN_PAYLOAD_SIZE + 2)) {
       var idPayload = getConfigPayloadFromReport(data);
       if (!idPayload) return;
-      var idOffset = idPayload.length >= CONFIG_PAYLOAD_SIZE ? CONFIG_PAYLOAD_SIZE - CONFIG_ID_SIZE : CONFIG_MIN_PAYLOAD_SIZE - CONFIG_ID_SIZE;
-      var dataId = readWordLE(idPayload, idOffset);
+      var dataId = readWordLE(idPayload, CONFIG_ID_OFFSET);
       if (dataId > 0 && dataId <= 65535) {
         document.getElementById('dataId').value = dataId;
         addLog('已读取数据ID: ' + dataId, 'success');
